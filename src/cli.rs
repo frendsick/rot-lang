@@ -1,22 +1,22 @@
 use clap::{Args, Parser, Subcommand};
 
-/// Torth compiler
+/// Rot compiler
 #[derive(Debug, Parser)]
 #[command(author, version, about)]
-pub struct TorthArgs {
+pub struct RotArgs {
     #[command(subcommand)]
     pub action: CliAction,
 }
 
 #[derive(Debug, Subcommand)]
 pub enum CliAction {
-    /// Compile a Torth program
+    /// Compile a Rot program
     Compile(CompilationTarget),
 }
 
 #[derive(Debug, Args)]
 pub struct CompilationTarget {
-    /// Torth code file
+    /// Rot code file
     pub rot_file: String,
     /// Output file
     #[arg(short, long, value_name="FILE")]

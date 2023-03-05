@@ -45,7 +45,7 @@ fn parse_functions(tokens: Vec<Token>) -> Result<Vec<Function>, CompilerError> {
     Ok(functions)
 }
 
-/// In Torth, function is defined with the following syntax:
+/// In Rot, function is defined with the following syntax:
 /// function <name>(param1: int, param2: str) -> bool { <code> }
 fn parse_function(tokens: Vec<Token>) -> Result<Function, CompilerError> {
     let mut cursor: usize = 0;
