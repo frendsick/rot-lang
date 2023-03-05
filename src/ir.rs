@@ -23,6 +23,7 @@ pub fn parse_ops(tokens: Vec<Token>) -> Vec<Op> {
 fn get_mapped_op_type(token_type: &TokenType) -> Option<OpType> {
     match token_type {
         TokenType::Calculation(calculation) => Some(OpType::Calculation(calculation.clone())),
+        TokenType::Comparison(comparison) => Some(OpType::Comparison(comparison.clone())),
         TokenType::Intrinsic(intrinsic) => Some(OpType::Intrinsic(intrinsic.clone())),
         TokenType::Literal(datatype) => Some(OpType::Push(datatype.clone())),
         _ => None,
