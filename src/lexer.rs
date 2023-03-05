@@ -114,12 +114,11 @@ mod tests {
 
     use super::*;
     use crate::{
+        constant::TEST_FOLDER,
         class::token::{Delimiter, Keyword},
         data_types::{ChunkSize, DataType},
         intrinsics::{Calculation, Comparison, Intrinsic},
     };
-
-    const TEST_FOLDER: &str = "tests";
 
     #[test]
     fn lex_nonexistent_file() {

@@ -16,14 +16,18 @@ pub fn compile_rot_file(
     rot_file: &str,
     _out_file: Option<String>,
 ) -> Result<(), CompilerError> {
+    let assembly: String = generate_assembly_from_rot_file(&rot_file)?;
+    println!("{assembly}");
+    // TODO: Compile the program
+    Ok(())
+}
+
+pub fn generate_assembly_from_rot_file(rot_file: &str) -> Result<String, CompilerError> {
     let tokens: Vec<Token> = tokenize_code_file(&rot_file)?;
     let functions: Vec<Function> = parse_functions(tokens)?;
     // TODO: Type check the program
     // TODO: Generate Assembly
-    let assembly: String = generate_assembly(functions);
-    println!("{assembly}");
-    // TODO: Compile the program
-    Ok(())
+    Ok(generate_assembly(functions))
 }
 
 fn parse_functions(tokens: Vec<Token>) -> Result<Vec<Function>, CompilerError> {
