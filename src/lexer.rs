@@ -82,7 +82,6 @@ fn get_next_token(
                 return get_next_token(code, code_file, cursor, row, column, token_id);
             }
             return Some(Token {
-                id: token_id,
                 value: match_str.to_string(),
                 typ: get_token_type(match_str),
                 location: Location::new(token_row, token_column, code_file),
