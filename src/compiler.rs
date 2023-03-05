@@ -40,7 +40,7 @@ fn parse_functions(tokens: Vec<Token>) -> Result<Vec<Function>, CompilerError> {
         }
     }
     if !function_defined(MAIN_FUNCTION_NAME, &functions) {
-        panic!("The {} function is not defined", MAIN_FUNCTION_NAME);
+        panic!("The '{}' function is not defined", MAIN_FUNCTION_NAME);
     }
     Ok(functions)
 }
