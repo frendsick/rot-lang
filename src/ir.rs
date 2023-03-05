@@ -4,20 +4,27 @@ use crate::class::token::{Token, TokenType};
 pub fn parse_ops(tokens: Vec<Token>) -> Vec<Op> {
     let mut ops: Vec<Op> = Vec::new();
     for (id, token) in tokens.iter().enumerate() {
-        let typ: OpType = get_op_type(&token.typ);
-        ops.push(Op {
-            id,
-            typ,
-            token: token.clone(),
-        });
+        if let Some(typ) = get_mapped_op_type(&token.typ) {
+            ops.push(Op {
+                id,
+                typ,
+                token: token.clone(),
+            });
+            continue;
+        }
+
+
     }
+    dbg!(&ops);
     ops
 }
 
-fn get_op_type(token_type: &TokenType) -> OpType {
+/// Returns OpType that is mapped one to one with a TokenType
+fn get_mapped_op_type(token_type: &TokenType) -> Option<OpType> {
     match token_type {
-        TokenType::Literal(datatype) => OpType::Push(datatype.clone()),
-        TokenType::Intrinsic(intrinsic) => OpType::Intrinsic(intrinsic.clone()),
-        _ => todo!()
+        TokenType::Calculation(calculation) => Some(OpType::Calculation(calculation.clone())),
+        TokenType::Intrinsic(intrinsic) => Some(OpType::Intrinsic(intrinsic.clone())),
+        TokenType::Literal(datatype) => Some(OpType::Push(datatype.clone())),
+        _ => None,
     }
 }

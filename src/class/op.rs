@@ -1,4 +1,4 @@
-use crate::{data_types::DataType, intrinsics::Intrinsic};
+use crate::{data_types::DataType, intrinsics::{Intrinsic, Calculation}};
 
 use super::token::Token;
 
@@ -13,6 +13,7 @@ pub struct Op {
 pub enum OpType {
     Break,
     Cast(DataType),
+    Calculation(Calculation),
     Continue,
     Do,
     Done,
