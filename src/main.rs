@@ -10,6 +10,7 @@ mod compiler;
 mod constant;
 mod data_types;
 mod intrinsics;
+mod ir;
 mod lexer;
 
 fn main() {
