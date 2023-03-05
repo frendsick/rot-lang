@@ -1,6 +1,7 @@
 use crate::class::function::{function_defined, Function};
 use crate::class::signature::{Parameter, Signature};
 use crate::class::token::{Delimiter, Keyword, Token, TokenType};
+use crate::constant::MAIN_FUNCTION_NAME;
 use crate::data_types::{datatype_from_string, DataType};
 use crate::lexer::tokenize_code_file;
 
@@ -35,12 +36,9 @@ fn parse_functions(tokens: Vec<Token>) -> Result<Vec<Function>, CompilerError> {
             functions.push(parse_function(tokens[token.id + 1..].to_vec())?);
         }
     }
-
-    if !function_defined("main", &functions) {
-        panic!("The 'main' function is not defined");
+    if !function_defined(MAIN_FUNCTION_NAME, &functions) {
+        panic!("The {} function is not defined", MAIN_FUNCTION_NAME);
     }
-
-    dbg!(&functions);
     Ok(functions)
 }
 
@@ -173,7 +171,6 @@ fn parse_function_parameters(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lexer::tokenize_code;
 
     const TEST_FOLDER: &str = "tests";
 
