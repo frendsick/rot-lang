@@ -3,17 +3,20 @@ use crate::class::token::{Token, TokenType, Keyword};
 
 pub fn parse_ops(tokens: Vec<Token>) -> Vec<Op> {
     let mut ops: Vec<Op> = Vec::new();
-    for (id, token) in tokens.iter().enumerate() {
-        if let Some(typ) = get_mapped_op_type(&token.typ) {
+    let mut i: usize = 0;
+    while i < tokens.len() {
+        // Parse Ops that are mapped one to one with a Token
+        if let Some(typ) = get_mapped_op_type(&tokens[i].typ) {
             ops.push(Op {
-                id,
+                id: ops.len(),
                 typ,
-                token: token.clone(),
+                token: tokens[i].clone(),
             });
+            i += 1;
             continue;
         }
-
-
+        // TODO: Parse non-mapped keywords
+        i += 1;
     }
     dbg!(&ops);
     ops
