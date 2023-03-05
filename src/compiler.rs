@@ -13,7 +13,7 @@ pub enum CompilerError {
 }
 
 pub fn compile_rot_file(
-    rot_file: String,
+    rot_file: &str,
     _out_file: Option<String>,
 ) -> Result<(), CompilerError> {
     let tokens: Vec<Token> = tokenize_code_file(&rot_file)?;

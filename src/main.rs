@@ -20,6 +20,6 @@ fn cli_action(args: TorthArgs) {
     match args.action {
         // ./rot-rust compile <TORTH_FILE>
         // TODO: CompilerError handling
-        CliAction::Compile(target) => compile_rot_file(target.rot_file, target.out).unwrap(),
+        CliAction::Compile(target) => compile_rot_file(&target.rot_file, target.out).unwrap(),
     }
 }
