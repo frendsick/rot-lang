@@ -1,22 +1,31 @@
 use crate::class::op::{Op, OpType};
-use crate::class::token::{Token, TokenType, Keyword};
+use crate::class::token::{Delimiter, Keyword, Token, TokenType};
+use crate::compiler::{advance_cursor, CompilerError};
+use crate::data_types::{datatype_from_string, DataType};
 
 pub fn parse_ops(tokens: Vec<Token>) -> Vec<Op> {
     let mut ops: Vec<Op> = Vec::new();
-    let mut i: usize = 0;
-    while i < tokens.len() {
+    let mut cursor: usize = 0;
+    while cursor < tokens.len() {
         // Parse Ops that are mapped one to one with a Token
-        if let Some(typ) = get_mapped_op_type(&tokens[i].typ) {
+        if let Some(typ) = get_mapped_op_type(&tokens[cursor].typ) {
             ops.push(Op {
                 id: ops.len(),
                 typ,
-                token: tokens[i].clone(),
+                token: tokens[cursor].clone(),
             });
-            i += 1;
+            cursor += 1;
             continue;
         }
-        // TODO: Parse non-mapped keywords
-        i += 1;
+        // Parse non-mapped Ops
+        if let Some(typ) = get_non_mapped_op_type(&mut cursor, &tokens) {
+            ops.push(Op {
+                id: ops.len(),
+                typ,
+                token: tokens[cursor].clone(),
+            });
+        }
+        cursor += 1;
     }
     dbg!(&ops);
     ops
@@ -29,9 +38,31 @@ fn get_mapped_op_type(token_type: &TokenType) -> Option<OpType> {
         TokenType::Comparison(comparison) => Some(OpType::Comparison(comparison.clone())),
         TokenType::Intrinsic(intrinsic) => Some(OpType::Intrinsic(intrinsic.clone())),
         TokenType::Literal(datatype) => Some(OpType::Push(datatype.clone())),
-        TokenType::Keyword(keyword) => get_keyword_op_type(keyword),
+        TokenType::Keyword(keyword) => {
+            if let Some(op_type) = get_keyword_op_type(keyword) {
+                return Some(op_type);
+            }
+            return None;
+        }
         _ => None,
     }
+}
+
+fn get_non_mapped_op_type(cursor: &mut usize, tokens: &Vec<Token>) -> Option<OpType> {
+    match tokens[*cursor].typ {
+        TokenType::Keyword(Keyword::Cast) => Some(parse_cast_op(cursor, tokens)),
+        _ => None,
+    }
+}
+
+fn parse_cast_op(cursor: &mut usize, tokens: &Vec<Token>) -> OpType {
+    advance_cursor(cursor, tokens, TokenType::Keyword(Keyword::Cast));
+    advance_cursor(cursor, tokens, TokenType::Delimiter(Delimiter::OpenParen));
+    let type_str = advance_cursor(cursor, tokens, TokenType::Identifier)
+        .unwrap()
+        .value;
+    advance_cursor(cursor, tokens, TokenType::Delimiter(Delimiter::CloseParen));
+    OpType::Cast(datatype_from_string(&type_str))
 }
 
 fn get_keyword_op_type(keyword: &Keyword) -> Option<OpType> {

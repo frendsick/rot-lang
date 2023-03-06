@@ -85,7 +85,7 @@ fn parse_function(tokens: Vec<Token>) -> Result<Function, CompilerError> {
     })
 }
 
-fn advance_cursor(
+pub fn advance_cursor(
     cursor: &mut usize,
     tokens: &Vec<Token>,
     expected_type: TokenType,
@@ -93,7 +93,8 @@ fn advance_cursor(
     if *cursor >= tokens.len() {
         // TODO: Enhance error reporting
         return Err(CompilerError::ParserError(
-            "Unexpected EOF while parsing".to_string(),
+            format!("Expected TokenType {:?} but got nothing",
+            expected_type)
         ));
     }
     let token: &Token = &tokens[*cursor];
