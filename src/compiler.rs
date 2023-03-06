@@ -87,7 +87,7 @@ fn parse_function(tokens: Vec<Token>) -> Result<Function, CompilerError> {
 }
 
 pub fn peek_next_token(cursor: usize, tokens: &Vec<Token>, expected_type: TokenType) -> bool {
-    cursor < tokens.len() - 1 && tokens[cursor + 1].typ != expected_type
+    cursor < tokens.len() - 1 && tokens[cursor + 1].typ == expected_type
 }
 
 pub fn advance_cursor(

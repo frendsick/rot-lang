@@ -43,13 +43,13 @@ fn get_mapped_op_type(token: &Token) -> Option<OpType> {
         // Parse this when tokens are already parsed to functions
         TokenType::Delimiter(_) => None,
         TokenType::Intrinsic(intrinsic) => Some(OpType::Intrinsic(intrinsic.clone())),
-        TokenType::Literal(datatype) => Some(OpType::Push(token.clone())),
+        TokenType::Literal(_) => Some(OpType::Push(token.clone())),
         TokenType::Keyword(keyword) => {
             if let Some(op_type) = get_keyword_op_type(&keyword) {
                 return Some(op_type);
             }
             return None;
-        },
+        }
         TokenType::Identifier => None,
         TokenType::None => None,
     }
@@ -61,16 +61,26 @@ fn get_non_mapped_op_type(cursor: &mut usize, tokens: &Vec<Token>) -> Option<OpT
         TokenType::Identifier => {
             let ident_token = &tokens[*cursor];
             // Identifier is a FunctionCall if it is followed by OpenParen
+            *cursor += 1;
             if advance_cursor(cursor, tokens, TokenType::Delimiter(Delimiter::OpenParen)).is_ok() {
                 let mut parameters: Vec<Parameter> = Vec::new();
+                if peek_next_token(*cursor, tokens, TokenType::Delimiter(Delimiter::CloseParen)) {
+                    return Some(OpType::FunctionCall(parameters));
+                }
                 loop {
-                    if peek_next_token(*cursor, tokens, TokenType::Delimiter(Delimiter::CloseParen)) {
+                    parameters.push(Parameter {
+                        name: tokens[*cursor].value.clone(),
+                        typ: None,
+                    });
+                    if peek_next_token(*cursor, tokens, TokenType::Delimiter(Delimiter::CloseParen))
+                    {
                         return Some(OpType::FunctionCall(parameters));
                     }
-                    break;
+                    *cursor += 1;
+                    advance_cursor(cursor, tokens, TokenType::Delimiter(Delimiter::Comma)).unwrap();
                 }
             } else {
-                *cursor -= 1;
+                *cursor -= 2;
             }
             Some(OpType::Push(ident_token.clone()))
         }
