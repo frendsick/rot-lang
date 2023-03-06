@@ -1,4 +1,4 @@
-use crate::class::op::{Op, OpType};
+use crate::class::op::{Op, OpType, PushData};
 use crate::class::token::{Delimiter, Keyword, Token, TokenType};
 use crate::compiler::advance_cursor;
 use crate::data_types::datatype_from_string;
@@ -9,7 +9,7 @@ pub fn parse_ops(tokens: Vec<Token>) -> Vec<Op> {
     while cursor < tokens.len() {
         let start_loc = tokens[cursor].start_loc.clone();
         // Parse Ops that are mapped one to one with a Token
-        if let Some(typ) = get_mapped_op_type(&tokens[cursor].typ) {
+        if let Some(typ) = get_mapped_op_type(&tokens[cursor]) {
             ops.push(Op {
                 id: ops.len(),
                 typ,
@@ -35,14 +35,17 @@ pub fn parse_ops(tokens: Vec<Token>) -> Vec<Op> {
 }
 
 /// Returns OpType that is mapped one to one with a TokenType
-fn get_mapped_op_type(token_type: &TokenType) -> Option<OpType> {
-    match token_type {
+fn get_mapped_op_type(token: &Token) -> Option<OpType> {
+    match &token.typ {
         TokenType::Calculation(calculation) => Some(OpType::Calculation(calculation.clone())),
         TokenType::Comparison(comparison) => Some(OpType::Comparison(comparison.clone())),
         TokenType::Intrinsic(intrinsic) => Some(OpType::Intrinsic(intrinsic.clone())),
-        TokenType::Literal(datatype) => Some(OpType::Push(datatype.clone())),
+        TokenType::Literal(datatype) => Some(OpType::Push(PushData {
+            value: token.value.clone(),
+            typ: datatype.clone(),
+        })),
         TokenType::Keyword(keyword) => {
-            if let Some(op_type) = get_keyword_op_type(keyword) {
+            if let Some(op_type) = get_keyword_op_type(&keyword) {
                 return Some(op_type);
             }
             return None;

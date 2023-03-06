@@ -11,6 +11,12 @@ pub struct Op {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct PushData {
+    pub value: String,
+    pub typ: DataType,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum OpType {
     Break,
     Cast(DataType),
@@ -26,7 +32,7 @@ pub enum OpType {
     FunctionReturn,
     If,
     Intrinsic(Intrinsic),
-    Push(DataType),
+    Push(PushData),
     Return,
     While,
 }
