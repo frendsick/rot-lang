@@ -83,7 +83,7 @@ fn get_keyword_op_type(keyword: &Keyword) -> Option<OpType> {
         Keyword::Else => Some(OpType::Else),
         Keyword::Endif => Some(OpType::Endif),
         Keyword::If => Some(OpType::If),
-        Keyword::Return => Some(OpType::FunctionReturn),
+        Keyword::Return => Some(OpType::Return),
         Keyword::While => Some(OpType::While),
         _ => None,
     }
