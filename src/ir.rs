@@ -59,13 +59,13 @@ fn get_non_mapped_op_type(cursor: &mut usize, tokens: &Vec<Token>) -> Option<OpT
 }
 
 fn parse_cast_op(cursor: &mut usize, tokens: &Vec<Token>) -> OpType {
-    advance_cursor(cursor, tokens, TokenType::Keyword(Keyword::Cast));
-    advance_cursor(cursor, tokens, TokenType::Delimiter(Delimiter::OpenParen));
+    advance_cursor(cursor, tokens, TokenType::Keyword(Keyword::Cast)).unwrap();
+    advance_cursor(cursor, tokens, TokenType::Delimiter(Delimiter::OpenParen)).unwrap();
     let type_str = advance_cursor(cursor, tokens, TokenType::Identifier)
         .unwrap()
         .value;
     // Verify that the next token is closing parenthesis
-    advance_cursor(cursor, tokens, TokenType::Delimiter(Delimiter::CloseParen));
+    advance_cursor(cursor, tokens, TokenType::Delimiter(Delimiter::CloseParen)).unwrap();
     *cursor -= 1;
     OpType::Cast(datatype_from_string(&type_str))
 }
