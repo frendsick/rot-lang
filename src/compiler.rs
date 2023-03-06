@@ -14,18 +14,19 @@ pub enum CompilerError {
     ParserError(String),
 }
 
-pub fn compile_rot_file(
-    rot_file: &str,
-    _out_file: Option<String>,
-) -> Result<(), CompilerError> {
+pub fn compile_rot_file(rot_file: &str, _out_file: Option<String>) -> Result<(), CompilerError> {
     let tokens: Vec<Token> = tokenize_code_file(&rot_file)?;
-    let ops: Vec<Op> = parse_ops(tokens);
+    let functions: Vec<Function> = parse_functions(&tokens)?;
+    for function in functions {
+        let ops: Vec<Op> = parse_ops(&function.tokens);
+        dbg!(&ops);
+    }
     // TODO: Generate assembly code
     // TODO: Compile the program
     Ok(())
 }
 
-fn parse_functions(tokens: Vec<Token>) -> Result<Vec<Function>, CompilerError> {
+fn parse_functions(tokens: &Vec<Token>) -> Result<Vec<Function>, CompilerError> {
     let mut functions: Vec<Function> = Vec::new();
     for (i, token) in tokens.iter().enumerate() {
         if token.typ == TokenType::Keyword(Keyword::Function) {
@@ -85,6 +86,10 @@ fn parse_function(tokens: Vec<Token>) -> Result<Function, CompilerError> {
     })
 }
 
+pub fn peek_next_token(cursor: usize, tokens: &Vec<Token>, expected_type: TokenType) -> bool {
+    cursor < tokens.len() - 1 && tokens[cursor + 1].typ != expected_type
+}
+
 pub fn advance_cursor(
     cursor: &mut usize,
     tokens: &Vec<Token>,
@@ -92,10 +97,10 @@ pub fn advance_cursor(
 ) -> Result<Token, CompilerError> {
     if *cursor >= tokens.len() {
         // TODO: Enhance error reporting
-        return Err(CompilerError::ParserError(
-            format!("Expected TokenType {:?} but got nothing",
-            expected_type)
-        ));
+        return Err(CompilerError::ParserError(format!(
+            "Expected TokenType {:?} but got nothing",
+            expected_type
+        )));
     }
     let token: &Token = &tokens[*cursor];
     *cursor += 1;
@@ -162,7 +167,10 @@ fn parse_function_parameters(
         advance_cursor(cursor, tokens, TokenType::Delimiter(Delimiter::Colon))?;
         let typ =
             datatype_from_string(&advance_cursor(cursor, tokens, TokenType::Identifier)?.value);
-        parameters.push(Parameter { name, typ });
+        parameters.push(Parameter {
+            name,
+            typ: Some(typ),
+        });
         if tokens[*cursor].typ != TokenType::Delimiter(Delimiter::Comma) {
             break;
         }
@@ -180,10 +188,9 @@ mod tests {
     #[test]
     #[should_panic(expected = "The 'main' function is not defined")]
     fn program_without_main_function() {
-        let tokens: Vec<Token> = tokenize_code_file(&format!(
-            "{TEST_FOLDER}/program_without_main_function.rot"
-        ))
-        .unwrap();
+        let tokens: Vec<Token> =
+            tokenize_code_file(&format!("{TEST_FOLDER}/program_without_main_function.rot"))
+                .unwrap();
         parse_functions(tokens).unwrap();
     }
 

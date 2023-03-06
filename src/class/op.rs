@@ -1,6 +1,9 @@
-use crate::{data_types::DataType, intrinsics::{Intrinsic, Calculation, Comparison}};
+use crate::{
+    data_types::DataType,
+    intrinsics::{Calculation, Comparison, Intrinsic},
+};
 
-use super::{token::Token, location::Location};
+use super::{location::Location, signature::Parameter, token::Token};
 
 #[derive(Debug, Clone)]
 pub struct Op {
@@ -8,12 +11,6 @@ pub struct Op {
     pub typ: OpType,
     pub start_loc: Location,
     pub end_loc: Location,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct PushData {
-    pub value: String,
-    pub typ: DataType,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -28,10 +25,10 @@ pub enum OpType {
     Elif,
     Else,
     Endif,
-    FunctionCall,
+    FunctionCall(Vec<Parameter>),
     If,
     Intrinsic(Intrinsic),
-    Push(PushData),
+    Push(Token),
     Return,
     While,
 }

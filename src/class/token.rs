@@ -6,7 +6,7 @@ use crate::intrinsics::{Calculation, Comparison, Intrinsic};
 
 use super::location::Location;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Token {
     pub value: String,
     pub typ: TokenType,

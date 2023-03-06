@@ -1,9 +1,10 @@
-use crate::class::op::{Op, OpType, PushData};
+use crate::class::op::{Op, OpType};
+use crate::class::signature::Parameter;
 use crate::class::token::{Delimiter, Keyword, Token, TokenType};
-use crate::compiler::advance_cursor;
+use crate::compiler::{advance_cursor, peek_next_token};
 use crate::data_types::datatype_from_string;
 
-pub fn parse_ops(tokens: Vec<Token>) -> Vec<Op> {
+pub fn parse_ops(tokens: &Vec<Token>) -> Vec<Op> {
     let mut ops: Vec<Op> = Vec::new();
     let mut cursor: usize = 0;
     while cursor < tokens.len() {
@@ -30,7 +31,6 @@ pub fn parse_ops(tokens: Vec<Token>) -> Vec<Op> {
         }
         cursor += 1;
     }
-    dbg!(&ops);
     ops
 }
 
@@ -39,24 +39,41 @@ fn get_mapped_op_type(token: &Token) -> Option<OpType> {
     match &token.typ {
         TokenType::Calculation(calculation) => Some(OpType::Calculation(calculation.clone())),
         TokenType::Comparison(comparison) => Some(OpType::Comparison(comparison.clone())),
+        // TODO: Op should not start with delimiter
+        // Parse this when tokens are already parsed to functions
+        TokenType::Delimiter(_) => None,
         TokenType::Intrinsic(intrinsic) => Some(OpType::Intrinsic(intrinsic.clone())),
-        TokenType::Literal(datatype) => Some(OpType::Push(PushData {
-            value: token.value.clone(),
-            typ: datatype.clone(),
-        })),
+        TokenType::Literal(datatype) => Some(OpType::Push(token.clone())),
         TokenType::Keyword(keyword) => {
             if let Some(op_type) = get_keyword_op_type(&keyword) {
                 return Some(op_type);
             }
             return None;
-        }
-        _ => None,
+        },
+        TokenType::Identifier => None,
+        TokenType::None => None,
     }
 }
 
 fn get_non_mapped_op_type(cursor: &mut usize, tokens: &Vec<Token>) -> Option<OpType> {
     match tokens[*cursor].typ {
         TokenType::Keyword(Keyword::Cast) => Some(parse_cast_op(cursor, tokens)),
+        TokenType::Identifier => {
+            let ident_token = &tokens[*cursor];
+            // Identifier is a FunctionCall if it is followed by OpenParen
+            if advance_cursor(cursor, tokens, TokenType::Delimiter(Delimiter::OpenParen)).is_ok() {
+                let mut parameters: Vec<Parameter> = Vec::new();
+                loop {
+                    if peek_next_token(*cursor, tokens, TokenType::Delimiter(Delimiter::CloseParen)) {
+                        return Some(OpType::FunctionCall(parameters));
+                    }
+                    break;
+                }
+            } else {
+                *cursor -= 1;
+            }
+            Some(OpType::Push(ident_token.clone()))
+        }
         _ => None,
     }
 }
