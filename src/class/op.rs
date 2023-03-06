@@ -21,7 +21,6 @@ pub enum OpType {
     Done,
     Elif,
     Else,
-    End,
     Endif,
     FunctionCall,
     FunctionReturn,
