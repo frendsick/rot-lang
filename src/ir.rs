@@ -7,12 +7,14 @@ pub fn parse_ops(tokens: Vec<Token>) -> Vec<Op> {
     let mut ops: Vec<Op> = Vec::new();
     let mut cursor: usize = 0;
     while cursor < tokens.len() {
+        let start_loc = tokens[cursor].start_loc.clone();
         // Parse Ops that are mapped one to one with a Token
         if let Some(typ) = get_mapped_op_type(&tokens[cursor].typ) {
             ops.push(Op {
                 id: ops.len(),
                 typ,
-                token: tokens[cursor].clone(),
+                start_loc,
+                end_loc: tokens[cursor].end_loc.clone(),
             });
             cursor += 1;
             continue;
@@ -22,7 +24,8 @@ pub fn parse_ops(tokens: Vec<Token>) -> Vec<Op> {
             ops.push(Op {
                 id: ops.len(),
                 typ,
-                token: tokens[cursor].clone(),
+                start_loc,
+                end_loc: tokens[cursor].end_loc.clone(),
             });
         }
         cursor += 1;
@@ -61,7 +64,9 @@ fn parse_cast_op(cursor: &mut usize, tokens: &Vec<Token>) -> OpType {
     let type_str = advance_cursor(cursor, tokens, TokenType::Identifier)
         .unwrap()
         .value;
+    // Verify that the next token is closing parenthesis
     advance_cursor(cursor, tokens, TokenType::Delimiter(Delimiter::CloseParen));
+    *cursor -= 1;
     OpType::Cast(datatype_from_string(&type_str))
 }
 

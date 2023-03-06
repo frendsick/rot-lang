@@ -1,12 +1,13 @@
 use crate::{data_types::DataType, intrinsics::{Intrinsic, Calculation, Comparison}};
 
-use super::token::Token;
+use super::{token::Token, location::Location};
 
 #[derive(Debug, Clone)]
 pub struct Op {
     pub id: usize,
     pub typ: OpType,
-    pub token: Token,
+    pub start_loc: Location,
+    pub end_loc: Location,
 }
 
 #[derive(Debug, Clone, PartialEq)]
