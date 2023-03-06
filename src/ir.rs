@@ -1,7 +1,7 @@
 use crate::class::op::{Op, OpType};
 use crate::class::token::{Delimiter, Keyword, Token, TokenType};
-use crate::compiler::{advance_cursor, CompilerError};
-use crate::data_types::{datatype_from_string, DataType};
+use crate::compiler::advance_cursor;
+use crate::data_types::datatype_from_string;
 
 pub fn parse_ops(tokens: Vec<Token>) -> Vec<Op> {
     let mut ops: Vec<Op> = Vec::new();

@@ -50,7 +50,6 @@ pub enum Keyword {
     Elif,
     Else,
     Endif,
-    Enum,
     Function,
     If,
     Include,
