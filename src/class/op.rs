@@ -25,7 +25,6 @@ pub enum OpType {
     FunctionCall,
     FunctionReturn,
     If,
-    In,
     Intrinsic(Intrinsic),
     Push(DataType),
     Return,
