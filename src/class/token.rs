@@ -82,7 +82,6 @@ pub const TOKEN_REGEXES: phf::OrderedMap<&str, TokenType> = phf_ordered_map!(
     r"^elif"            => TokenType::Keyword(Keyword::Elif),
     r"^else"            => TokenType::Keyword(Keyword::Else),
     r"^endif"           => TokenType::Keyword(Keyword::Endif),
-    r"^enum"            => TokenType::Keyword(Keyword::Enum),
     r"^function"        => TokenType::Keyword(Keyword::Function),
     r"^if"              => TokenType::Keyword(Keyword::If),
     r"^include"         => TokenType::Keyword(Keyword::Include),
