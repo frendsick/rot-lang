@@ -84,7 +84,8 @@ fn get_next_token(
             return Some(Token {
                 value: match_str.to_string(),
                 typ: get_token_type(match_str),
-                location: Location::new(token_row, token_column, code_file),
+                start_loc: Location::new(token_row, token_column, code_file.clone()),
+                end_loc: Location::new(*row, *column-1, code_file),
             });
         }
     }

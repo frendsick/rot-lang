@@ -10,7 +10,8 @@ use super::location::Location;
 pub struct Token {
     pub value: String,
     pub typ: TokenType,
-    pub location: Location,
+    pub start_loc: Location,
+    pub end_loc: Location,
 }
 
 #[derive(Debug, Clone, PartialEq)]
