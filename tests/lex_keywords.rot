@@ -7,7 +7,6 @@ done
 elif
 else
 endif
-enum
 function
 if
 include

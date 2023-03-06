@@ -280,13 +280,13 @@ mod tests {
         let tokens: Vec<Token> = tokenize_code(code, None, &mut token_id);
         assert_eq!(tokens.len(), 4);
         assert_eq!(tokens[0].value, "34");
-        assert_eq!(tokens[0].location, Location::new(2, 3, None));
+        assert_eq!(tokens[0].end_loc, Location::new(2, 4, None));
         assert_eq!(
             tokens[1].typ,
             TokenType::Literal(DataType::Integer(ChunkSize::Qword))
         );
         assert_eq!(tokens[2].typ, TokenType::Calculation(Calculation::Addition));
         assert_eq!(tokens[3].typ, TokenType::Intrinsic(Intrinsic::Print));
-        assert_eq!(tokens[3].location, Location::new(6, 9, None));
+        assert_eq!(tokens[3].start_loc, Location::new(6, 9, None));
     }
 }

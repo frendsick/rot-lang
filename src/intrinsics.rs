@@ -27,6 +27,7 @@ pub enum Intrinsic {
 pub enum Calculation {
     Addition,
     Division,
+    Modulus,
     Multiplication,
     Subtraction,
 }

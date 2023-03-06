@@ -191,25 +191,25 @@ mod tests {
         let tokens: Vec<Token> =
             tokenize_code_file(&format!("{TEST_FOLDER}/program_without_main_function.rot"))
                 .unwrap();
-        parse_functions(tokens).unwrap();
+        parse_functions(&tokens).unwrap();
     }
 
     #[test]
     fn parse_function_parameters() {
         let tokens: Vec<Token> =
             tokenize_code_file(&format!("{TEST_FOLDER}/parse_function_parameters.rot")).unwrap();
-        let functions: Vec<Function> = parse_functions(tokens).unwrap();
+        let functions: Vec<Function> = parse_functions(&tokens).unwrap();
         assert_eq!(functions.len(), 1);
         let parameters: &Vec<Parameter> = &functions.first().unwrap().signature.parameters;
         assert_eq!(parameters.len(), 3);
         assert_eq!(parameters[0].name, "a".to_string());
         assert_eq!(parameters[1].name, "b".to_string());
         assert_eq!(parameters[2].name, "c".to_string());
-        assert_eq!(parameters[0].typ, DataType::Boolean);
-        assert_eq!(parameters[1].typ, DataType::Character);
+        assert_eq!(parameters[0].typ, Some(DataType::Boolean));
+        assert_eq!(parameters[1].typ, Some(DataType::Character));
         assert_eq!(
             parameters[2].typ,
-            DataType::Custom("CustomType".to_string())
+            Some(DataType::Custom("CustomType".to_string()))
         );
     }
 }
