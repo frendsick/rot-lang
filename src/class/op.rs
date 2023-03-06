@@ -14,6 +14,12 @@ pub struct Op {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct FunctionCallInfo {
+    pub function_name: String,
+    pub parameters: Vec<Parameter>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum OpType {
     Break,
     Cast(DataType),
@@ -25,7 +31,7 @@ pub enum OpType {
     Elif,
     Else,
     Endif,
-    FunctionCall(Vec<Parameter>),
+    FunctionCall(FunctionCallInfo),
     If,
     Intrinsic(Intrinsic),
     Push(Token),

@@ -1,4 +1,4 @@
-use crate::class::op::{Op, OpType};
+use crate::class::op::{FunctionCallInfo, Op, OpType};
 use crate::class::signature::Parameter;
 use crate::class::token::{Delimiter, Keyword, Token, TokenType};
 use crate::compiler::{advance_cursor, peek_next_token};
@@ -64,8 +64,12 @@ fn get_non_mapped_op_type(cursor: &mut usize, tokens: &Vec<Token>) -> Option<OpT
             *cursor += 1;
             if advance_cursor(cursor, tokens, TokenType::Delimiter(Delimiter::OpenParen)).is_ok() {
                 let mut parameters: Vec<Parameter> = Vec::new();
-                if peek_next_token(*cursor, tokens, TokenType::Delimiter(Delimiter::CloseParen)) {
-                    return Some(OpType::FunctionCall(parameters));
+                if peek_next_token(*cursor-1, tokens, TokenType::Delimiter(Delimiter::CloseParen)) {
+                    let function_call_info = FunctionCallInfo {
+                        function_name: ident_token.value.clone(),
+                        parameters,
+                    };
+                    return Some(OpType::FunctionCall(function_call_info));
                 }
                 loop {
                     parameters.push(Parameter {
@@ -74,7 +78,11 @@ fn get_non_mapped_op_type(cursor: &mut usize, tokens: &Vec<Token>) -> Option<OpT
                     });
                     if peek_next_token(*cursor, tokens, TokenType::Delimiter(Delimiter::CloseParen))
                     {
-                        return Some(OpType::FunctionCall(parameters));
+                        let function_call_info = FunctionCallInfo {
+                            function_name: ident_token.value.clone(),
+                            parameters,
+                        };
+                        return Some(OpType::FunctionCall(function_call_info));
                     }
                     *cursor += 1;
                     advance_cursor(cursor, tokens, TokenType::Delimiter(Delimiter::Comma)).unwrap();
