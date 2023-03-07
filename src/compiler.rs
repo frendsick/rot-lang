@@ -1,4 +1,6 @@
+use crate::ast::generate_ast;
 use crate::class::function::{function_defined, Function};
+use crate::class::program::Program;
 use crate::class::signature::{Parameter, Signature};
 use crate::class::token::{Delimiter, Keyword, Token, TokenType};
 use crate::constant::MAIN_FUNCTION_NAME;
@@ -16,7 +18,8 @@ pub fn compile_rot_file(
     _out_file: Option<String>,
 ) -> Result<(), CompilerError> {
     let tokens: Vec<Token> = tokenize_code_file(&rot_file)?;
-    let functions: Vec<Function> = parse_functions(tokens)?;
+    let program: Program = generate_ast(&tokens);
+    // let functions: Vec<Function> = parse_functions(tokens)?;
     // TODO: Generate abstract syntax tree (AST)
     // TODO: Generate assembly code
     // TODO: Compile the program

@@ -1,7 +1,0 @@
-function main() {
-    add(34, 35) print
-}
-
-function add(a: int, b: int) -> int {
-    a b +
-}
