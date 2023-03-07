@@ -1,2 +1,2 @@
-pub const MAIN_FUNCTION_NAME: &str = "main";
 pub const TEST_FOLDER: &str = "tests";
+pub const EXPRESSION_DELIMITERS: [&str; 6] = [ ";", ",", "(", ")", "{", "}" ];

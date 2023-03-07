@@ -13,6 +13,6 @@ pub enum ExpressionType {
     Enclosure,
     FunctionCall,
     Identifier,
-    Literal(DataType),
+    Literal(Option<DataType>),
     Unary,
 }

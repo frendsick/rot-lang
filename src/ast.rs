@@ -1,11 +1,13 @@
 use crate::{
     class::{
+        expression::{Expression, ExpressionType},
         program::Program,
         signature::{Parameter, Signature},
-        statement::{Statement, StatementType, Conditional},
+        statement::{Conditional, Statement, StatementType},
         token::{Delimiter, Keyword, Token, TokenType},
     },
     compiler::CompilerError,
+    constant::EXPRESSION_DELIMITERS,
     data_types::{datatype_from_string, DataType},
 };
 
@@ -95,15 +97,54 @@ fn block_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Statement,
     let typ: StatementType = block_statement_type_from_str(&tokens[*cursor].value);
     *cursor += 1; // Go past initial Keyword
     advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::OpenParen))?;
-    // let expression: Expression = parse_expression(tokens, cursor);
+    let expression: Option<Expression> = parse_expression(tokens, cursor)?;
     advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::CloseParen))?;
     let statement: Statement = compound_statement(tokens, cursor)?;
     Ok(Statement {
         typ,
         value: None,
-        expression: None, // TODO: Parse condition expression
+        expression,
         statements: Some(vec![statement]),
     })
+}
+
+fn parse_expression(
+    tokens: &Vec<Token>,
+    cursor: &mut usize,
+) -> Result<Option<Expression>, CompilerError> {
+    // No expression
+    if EXPRESSION_DELIMITERS.contains(&peek_cursor(*cursor, tokens)?.value.as_str()) {
+        return Ok(None);
+    }
+
+    // Literal expression
+    if EXPRESSION_DELIMITERS.contains(&peek_cursor(*cursor + 1, tokens)?.value.as_str()) {
+        return Ok(Some(literal_expression(tokens, cursor)?));
+    }
+    *cursor += 1;
+    // TODO: Parse other expressions
+    Ok(None)
+}
+
+fn literal_expression(
+    tokens: &Vec<Token>,
+    cursor: &mut usize,
+) -> Result<Expression, CompilerError> {
+    let index: usize = *cursor;
+    *cursor += 1;
+    match &tokens[index].typ {
+        TokenType::Literal(data_type) => Ok(Expression {
+            typ: ExpressionType::Literal(Some(data_type.clone())),
+            value: Some(tokens[index].value.clone()),
+            expressions: None,
+        }),
+        TokenType::Identifier => Ok(Expression {
+            typ: ExpressionType::Literal(None),
+            value: Some(tokens[index].value.clone()),
+            expressions: None,
+        }),
+        _ => panic!("Unknown literal token '{}'", tokens[*cursor].value),
+    }
 }
 
 fn block_statement_type_from_str(block_type_str: &str) -> StatementType {
@@ -112,7 +153,7 @@ fn block_statement_type_from_str(block_type_str: &str) -> StatementType {
         "elif" => StatementType::Conditional(Conditional::Elif),
         "else" => StatementType::Conditional(Conditional::Else),
         "while" => StatementType::Loop,
-        _ => panic!("Unknown block type '{}'", block_type_str)
+        _ => panic!("Unknown block type '{}'", block_type_str),
     }
 }
 
@@ -129,7 +170,7 @@ fn parse_function_parameters(
 ) -> Result<Vec<Parameter>, CompilerError> {
     let mut parameters: Vec<Parameter> = Vec::new();
     // Parse parameters until ')'
-    while peek_cursor(
+    while check_cursor(
         *cursor,
         tokens,
         &TokenType::Delimiter(Delimiter::CloseParen),
@@ -140,7 +181,7 @@ fn parse_function_parameters(
         // Parameters are separated by commas
         // There can be a comma after the last parameter
         // Example: fun foo(a: int, b: int,) { }
-        if peek_cursor(*cursor, tokens, &TokenType::Delimiter(Delimiter::Comma)).is_ok() {
+        if check_cursor(*cursor, tokens, &TokenType::Delimiter(Delimiter::Comma)).is_ok() {
             *cursor += 1;
         }
     }
@@ -162,7 +203,7 @@ fn parse_return_type(
     tokens: &Vec<Token>,
     cursor: &mut usize,
 ) -> Result<Option<DataType>, CompilerError> {
-    if peek_cursor(*cursor, tokens, &TokenType::Delimiter(Delimiter::OpenCurly)).is_ok() {
+    if check_cursor(*cursor, tokens, &TokenType::Delimiter(Delimiter::OpenCurly)).is_ok() {
         return Ok(None);
     }
     advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::Arrow))?;
@@ -176,23 +217,27 @@ fn advance_cursor(
     tokens: &Vec<Token>,
     expected_type: &TokenType,
 ) -> Result<Token, CompilerError> {
-    let token: Token = peek_cursor(cursor.to_owned(), tokens, &expected_type)?;
+    let token: Token = check_cursor(cursor.to_owned(), tokens, &expected_type)?;
     *cursor += 1;
     Ok(token.clone())
 }
 
-fn peek_cursor(
-    cursor: usize,
-    tokens: &Vec<Token>,
-    expected_type: &TokenType,
-) -> Result<Token, CompilerError> {
+fn peek_cursor(cursor: usize, tokens: &Vec<Token>) -> Result<Token, CompilerError> {
     if cursor >= tokens.len() {
         // TODO: Enhance error reporting
         return Err(CompilerError::ParserError(
             "Unexpected EOF while parsing".to_string(),
         ));
     }
-    let token: &Token = &tokens[cursor];
+    Ok(tokens[cursor].clone())
+}
+
+fn check_cursor(
+    cursor: usize,
+    tokens: &Vec<Token>,
+    expected_type: &TokenType,
+) -> Result<Token, CompilerError> {
+    let token: Token = peek_cursor(cursor, tokens)?;
     if &token.typ != expected_type {
         return Err(CompilerError::ParserError(format!(
             "Expected TokenType {:?} but got {:?}\n{:?}",
