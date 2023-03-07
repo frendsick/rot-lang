@@ -69,10 +69,9 @@ fn function_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Stateme
     advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::OpenParen))?;
     let parameters: Vec<Parameter> = parse_function_parameters(tokens, cursor)?;
     advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::CloseParen))?;
-    // TODO: Return type
     let signature: Signature = Signature {
         parameters,
-        return_type: None,
+        return_type: parse_return_type(tokens, cursor)?,
     };
     Ok(Statement {
         typ: StatementType::Function(signature), // TODO: Params, Return type
@@ -113,6 +112,19 @@ fn parse_next_parameter(
         *cursor += 1;
     }
     Ok(Parameter::new(name, typ))
+}
+
+fn parse_return_type(
+    tokens: &Vec<Token>,
+    cursor: &mut usize,
+) -> Result<Option<DataType>, CompilerError> {
+    if peek_cursor(*cursor, tokens, &TokenType::Delimiter(Delimiter::OpenCurly)).is_ok() {
+        return Ok(None);
+    }
+    advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::Arrow))?;
+    Ok(Some(datatype_from_string(
+        &advance_cursor(cursor, tokens, &TokenType::Identifier)?.value,
+    )))
 }
 
 fn advance_cursor(
@@ -178,14 +190,14 @@ mod tests {
 
     #[test]
     fn parse_function_statement() {
-        let tokens: Vec<Token> = tokenize_code("fun foo(a:int, b:str) { }", None);
+        let tokens: Vec<Token> = tokenize_code("fun foo(a:int, b:str) -> bool { }", None);
         let program: Program = generate_ast(&tokens).expect("Could not generate AST");
         assert_eq!(program.statements.len(), 1);
         let parameters: Vec<Parameter> = vec![
             Parameter::new("a".to_string(), DataType::Integer),
             Parameter::new("b".to_string(), DataType::String),
         ];
-        let return_type: Option<DataType> = None;
+        let return_type: Option<DataType> = Some(DataType::Boolean);
         let signature: Signature = Signature {
             parameters,
             return_type,
