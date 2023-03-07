@@ -9,11 +9,10 @@ pub fn tokenize_code_file(file: &str) -> Result<Vec<Token>, CompilerError> {
         Ok(string) => string,
         Err(error) => return Err(CompilerError::IOError(error)),
     };
-    let mut token_id: usize = 0;
-    Ok(tokenize_code(&code, Some(file.to_string()), &mut token_id))
+    Ok(tokenize_code(&code, Some(file.to_string())))
 }
 
-pub fn tokenize_code(code: &str, code_file: Option<String>, token_id: &mut usize) -> Vec<Token> {
+pub fn tokenize_code(code: &str, code_file: Option<String>) -> Vec<Token> {
     let mut tokens: Vec<Token> = Vec::new();
     let mut row: usize = 1;
     let mut column: usize = 1;
@@ -24,14 +23,12 @@ pub fn tokenize_code(code: &str, code_file: Option<String>, token_id: &mut usize
             code_file.clone(),
             &mut cursor,
             &mut row,
-            &mut column,
-            token_id.to_owned(),
+            &mut column
         );
         if token.is_none() {
             break;
         }
         tokens.push(token.unwrap());
-        *token_id += 1;
     }
     return tokens;
 }
@@ -42,7 +39,6 @@ fn get_next_token(
     cursor: &mut usize,
     row: &mut usize,
     column: &mut usize,
-    token_id: usize,
 ) -> Option<Token> {
     if *cursor >= code.len() {
         return None;
@@ -79,10 +75,9 @@ fn get_next_token(
 
             // Token should be skipped, e.g. whitespace or comment
             if token_type == &TokenType::None {
-                return get_next_token(code, code_file, cursor, row, column, token_id);
+                return get_next_token(code, code_file, cursor, row, column);
             }
             return Some(Token {
-                id: token_id,
                 value: match_str.to_string(),
                 typ: get_token_type(match_str),
                 location: Location::new(token_row, token_column, code_file),

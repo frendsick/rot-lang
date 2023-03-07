@@ -33,7 +33,7 @@ fn parse_functions(tokens: Vec<Token>) -> Result<Vec<Function>, CompilerError> {
                     token.value
                 )));
             }
-            functions.push(parse_function(tokens[token.id + 1..].to_vec())?);
+            functions.push(parse_function(tokens[i + 1..].to_vec())?);
         }
     }
     if !function_defined(MAIN_FUNCTION_NAME, &functions) {

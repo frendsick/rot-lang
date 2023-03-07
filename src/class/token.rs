@@ -7,7 +7,6 @@ use super::location::Location;
 
 #[derive(Debug, Clone)]
 pub struct Token {
-    pub id: usize,
     pub value: String,
     pub typ: TokenType,
     pub location: Location,
