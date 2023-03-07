@@ -1,4 +1,3 @@
-use crate::assembly::generate_assembly;
 use crate::class::function::{function_defined, Function};
 use crate::class::signature::{Parameter, Signature};
 use crate::class::token::{Delimiter, Keyword, Token, TokenType};
@@ -16,18 +15,12 @@ pub fn compile_rot_file(
     rot_file: &str,
     _out_file: Option<String>,
 ) -> Result<(), CompilerError> {
-    let assembly: String = generate_assembly_from_rot_file(&rot_file)?;
-    println!("{assembly}");
-    // TODO: Compile the program
-    Ok(())
-}
-
-pub fn generate_assembly_from_rot_file(rot_file: &str) -> Result<String, CompilerError> {
     let tokens: Vec<Token> = tokenize_code_file(&rot_file)?;
     let functions: Vec<Function> = parse_functions(tokens)?;
-    // TODO: Type check the program
-    // TODO: Generate Assembly
-    Ok(generate_assembly(functions))
+    // TODO: Generate abstract syntax tree (AST)
+    // TODO: Generate assembly code
+    // TODO: Compile the program
+    Ok(())
 }
 
 fn parse_functions(tokens: Vec<Token>) -> Result<Vec<Function>, CompilerError> {

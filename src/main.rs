@@ -3,7 +3,6 @@ use clap::Parser;
 use cli::{CliAction, RotArgs};
 use compiler::compile_rot_file;
 
-mod assembly;
 mod class;
 mod cli;
 mod compiler;
