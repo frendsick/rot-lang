@@ -1,7 +1,7 @@
 use crate::class::{
     program::Program,
     statement::{Statement, StatementType},
-    token::Token,
+    token::{Token, TokenType, Delimiter},
 };
 
 pub fn generate_ast(tokens: &Vec<Token>) -> Program {
@@ -17,8 +17,12 @@ pub fn generate_ast(tokens: &Vec<Token>) -> Program {
 pub fn get_next_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Statement {
     let token: &Token = tokens.get(*cursor).unwrap();
     match token.typ {
-        _ => { dbg!(&token.typ); },
+        TokenType::Delimiter(Delimiter::SemiColon) => no_operation_statement(),
+        _ => todo!("Parsing statement for {:?}", token),
     }
+}
+
+fn no_operation_statement() -> Statement {
     Statement {
         typ: StatementType::NoOperation,
         value: None,

@@ -13,12 +13,10 @@ pub enum CompilerError {
     ParserError(String),
 }
 
-pub fn compile_rot_file(
-    rot_file: &str,
-    _out_file: Option<String>,
-) -> Result<(), CompilerError> {
+pub fn compile_rot_file(rot_file: &str, _out_file: Option<String>) -> Result<(), CompilerError> {
     let tokens: Vec<Token> = tokenize_code_file(&rot_file)?;
     let program: Program = generate_ast(&tokens);
+    dbg!(&program);
     // let functions: Vec<Function> = parse_functions(tokens)?;
     // TODO: Generate abstract syntax tree (AST)
     // TODO: Generate assembly code
@@ -169,4 +167,19 @@ fn parse_function_parameters(
         *cursor += 1;
     }
     Ok(parameters)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{constant::TEST_FOLDER, class::statement::StatementType};
+
+    #[test]
+    fn parse_no_operation_statement() {
+        let tokens: Vec<Token> =
+            tokenize_code_file(&format!("{TEST_FOLDER}/parse_no_op_statement.rot")).unwrap();
+        let program: Program = generate_ast(&tokens);
+        assert_eq!(program.statements.len(), 1);
+        assert_eq!(program.statements[0].typ, StatementType::NoOperation);
+    }
 }
