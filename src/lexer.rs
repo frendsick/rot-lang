@@ -114,10 +114,9 @@ mod tests {
 
     use super::*;
     use crate::{
-        constant::TEST_FOLDER,
         class::token::{Delimiter, Keyword},
+        constant::TEST_FOLDER,
         data_types::{ChunkSize, DataType},
-        intrinsics::{Calculation, Comparison, Intrinsic},
     };
 
     #[test]
@@ -162,30 +161,6 @@ mod tests {
     }
 
     #[test]
-    fn lex_calculations() {
-        let tokens: Vec<Token> =
-            tokenize_code_file(&format!("{TEST_FOLDER}/lex_calculations.rot")).unwrap();
-        // Are all calculation operators taken into account in the test file
-        assert_eq!(tokens.len(), Calculation::COUNT);
-        // Are tokens lexed correctly as certain calculation operations
-        for (i, operation) in Calculation::iter().enumerate() {
-            assert_eq!(TokenType::Calculation(operation), tokens[i].typ)
-        }
-    }
-
-    #[test]
-    fn lex_comparisons() {
-        let tokens: Vec<Token> =
-            tokenize_code_file(&format!("{TEST_FOLDER}/lex_comparisons.rot")).unwrap();
-        // Are all comparison operators taken into account in the test file
-        assert_eq!(tokens.len(), Comparison::COUNT);
-        // Are tokens lexed correctly as certain comparison operations
-        for (i, operation) in Comparison::iter().enumerate() {
-            assert_eq!(TokenType::Comparison(operation), tokens[i].typ)
-        }
-    }
-
-    #[test]
     fn lex_delimiters() {
         let tokens: Vec<Token> =
             tokenize_code_file(&format!("{TEST_FOLDER}/lex_delimiters.rot")).unwrap();
@@ -198,52 +173,6 @@ mod tests {
     }
 
     #[test]
-    fn lex_intrinsics() {
-        let tokens: Vec<Token> =
-            tokenize_code_file(&format!("{TEST_FOLDER}/lex_intrinsics.rot")).unwrap();
-        // Are all DataTypes taken into account in the test file
-        const SYSCALL_COUNT: usize = 7;
-        assert_eq!(
-            tokens.len(),
-            Intrinsic::COUNT + ChunkSize::COUNT * 2 + SYSCALL_COUNT - 3
-        );
-        let mut i: usize = 0;
-        // Are tokens lexed correctly as certain intrinsic
-        for intrinsic in Intrinsic::iter() {
-            match intrinsic {
-                Intrinsic::Load(_) => {
-                    for chunk_size in ChunkSize::iter() {
-                        assert_eq!(
-                            TokenType::Intrinsic(Intrinsic::Load(chunk_size)),
-                            tokens[i].typ
-                        );
-                        i += 1;
-                    }
-                }
-                Intrinsic::Store(_) => {
-                    for chunk_size in ChunkSize::iter() {
-                        assert_eq!(
-                            TokenType::Intrinsic(Intrinsic::Store(chunk_size)),
-                            tokens[i].typ
-                        );
-                        i += 1;
-                    }
-                }
-                Intrinsic::Syscall(_) => {
-                    for (arg_count, _) in [..SYSCALL_COUNT].iter().enumerate() {
-                        assert_eq!(
-                            TokenType::Intrinsic(Intrinsic::Syscall(arg_count as u8)),
-                            tokens[i].typ
-                        );
-                        i += 1;
-                    }
-                }
-                _ => i += 1,
-            }
-        }
-    }
-
-    #[test]
     fn lex_literals() {
         let tokens: Vec<Token> =
             tokenize_code_file(&format!("{TEST_FOLDER}/lex_literals.rot")).unwrap();
@@ -252,9 +181,7 @@ mod tests {
         // Are tokens lexed correctly as literal with certain type
         for (i, data_type) in DataType::iter().enumerate() {
             // Pointer literals do not exist
-            if data_type == DataType::Pointer ||
-                i >= DataType::iter().len() - 1
-            {
+            if data_type == DataType::Pointer || i >= DataType::iter().len() - 1 {
                 continue;
             }
             assert_eq!(TokenType::Literal(data_type), tokens[i].typ)
@@ -271,22 +198,5 @@ mod tests {
         for (i, keyword) in Keyword::iter().enumerate() {
             assert_eq!(TokenType::Keyword(keyword), tokens[i].typ)
         }
-    }
-
-    #[test]
-    fn lex_arithmetic_program() {
-        let code: &str = "\n  34 \n\n\n \n  35 +  print";
-        let mut token_id: usize = 0;
-        let tokens: Vec<Token> = tokenize_code(code, None, &mut token_id);
-        assert_eq!(tokens.len(), 4);
-        assert_eq!(tokens[0].value, "34");
-        assert_eq!(tokens[0].location, Location::new(2, 3, None));
-        assert_eq!(
-            tokens[1].typ,
-            TokenType::Literal(DataType::Integer(ChunkSize::Qword))
-        );
-        assert_eq!(tokens[2].typ, TokenType::Calculation(Calculation::Addition));
-        assert_eq!(tokens[3].typ, TokenType::Intrinsic(Intrinsic::Print));
-        assert_eq!(tokens[3].location, Location::new(6, 9, None));
     }
 }

@@ -2,7 +2,6 @@ use phf::phf_ordered_map;
 use strum_macros::{EnumCount, EnumIter};
 
 use crate::data_types::{DataType, ChunkSize};
-use crate::intrinsics::{Calculation, Comparison, Intrinsic};
 
 use super::location::Location;
 
@@ -16,14 +15,27 @@ pub struct Token {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
-    Calculation(Calculation),
-    Comparison(Comparison),
+    BinaryOperator(BinaryOperator),
     Delimiter(Delimiter),
     Identifier,
-    Intrinsic(Intrinsic),
     Literal(DataType),
     Keyword(Keyword),
     None,
+}
+
+#[derive(Debug, Clone, PartialEq, EnumCount, EnumIter)]
+pub enum BinaryOperator {
+    Addition,
+    Subtraction,
+    Division,
+    Multiplication,
+    Assignment,
+    Equals,
+    GreaterOrEqual,
+    GreaterThan,
+    LessOrEqual,
+    LessThan,
+    NotEquals,
 }
 
 #[derive(Debug, Clone, PartialEq, EnumCount, EnumIter)]
@@ -94,35 +106,6 @@ pub const TOKEN_REGEXES: phf::OrderedMap<&str, TokenType> = phf_ordered_map!(
     r"^return"          => TokenType::Keyword(Keyword::Return),
     r"^while"           => TokenType::Keyword(Keyword::While),
 
-    // Intrinsics
-    r"^and"             => TokenType::Intrinsic(Intrinsic::And),
-    r"^argc"            => TokenType::Intrinsic(Intrinsic::Argc),
-    r"^argv"            => TokenType::Intrinsic(Intrinsic::Argv),
-    r"^drop"            => TokenType::Intrinsic(Intrinsic::Drop),
-    r"^dup"             => TokenType::Intrinsic(Intrinsic::Dup),
-    r"^envp"            => TokenType::Intrinsic(Intrinsic::Envp),
-    r"^load_byte"       => TokenType::Intrinsic(Intrinsic::Load(ChunkSize::Byte)),
-    r"^load_word"       => TokenType::Intrinsic(Intrinsic::Load(ChunkSize::Word)),
-    r"^load_dword"      => TokenType::Intrinsic(Intrinsic::Load(ChunkSize::Dword)),
-    r"^load_qword"      => TokenType::Intrinsic(Intrinsic::Load(ChunkSize::Qword)),
-    r"^store_byte"      => TokenType::Intrinsic(Intrinsic::Store(ChunkSize::Byte)),
-    r"^store_word"      => TokenType::Intrinsic(Intrinsic::Store(ChunkSize::Word)),
-    r"^store_dword"     => TokenType::Intrinsic(Intrinsic::Store(ChunkSize::Dword)),
-    r"^store_qword"     => TokenType::Intrinsic(Intrinsic::Store(ChunkSize::Qword)),
-    r"^over"            => TokenType::Intrinsic(Intrinsic::Over),
-    r"^print"           => TokenType::Intrinsic(Intrinsic::Print),
-    r"^rot"             => TokenType::Intrinsic(Intrinsic::Rot),
-    r"^shl"             => TokenType::Intrinsic(Intrinsic::Shl),
-    r"^shr"             => TokenType::Intrinsic(Intrinsic::Shr),
-    r"^swap"            => TokenType::Intrinsic(Intrinsic::Swap),
-    r"^syscall0"        => TokenType::Intrinsic(Intrinsic::Syscall(0)),
-    r"^syscall1"        => TokenType::Intrinsic(Intrinsic::Syscall(1)),
-    r"^syscall2"        => TokenType::Intrinsic(Intrinsic::Syscall(2)),
-    r"^syscall3"        => TokenType::Intrinsic(Intrinsic::Syscall(3)),
-    r"^syscall4"        => TokenType::Intrinsic(Intrinsic::Syscall(4)),
-    r"^syscall5"        => TokenType::Intrinsic(Intrinsic::Syscall(5)),
-    r"^syscall6"        => TokenType::Intrinsic(Intrinsic::Syscall(6)),
-
     // Delimiters
     r"^\("              => TokenType::Delimiter(Delimiter::OpenParen),
     r"^\)"              => TokenType::Delimiter(Delimiter::CloseParen),
@@ -136,22 +119,18 @@ pub const TOKEN_REGEXES: phf::OrderedMap<&str, TokenType> = phf_ordered_map!(
     r"^:"               => TokenType::Delimiter(Delimiter::Colon),
     r"^;"               => TokenType::Delimiter(Delimiter::SemiColon),
 
-    // Comparison Operators
-    r"^=="              => TokenType::Comparison(Comparison::EQ),
-    r"^>="              => TokenType::Comparison(Comparison::GE),
-    r"^>"               => TokenType::Comparison(Comparison::GT),
-    r"^<="              => TokenType::Comparison(Comparison::LE),
-    r"^<"               => TokenType::Comparison(Comparison::LT),
-    r"^!="              => TokenType::Comparison(Comparison::NE),
-
-    // Equal sign
-    r"^="               => TokenType::Delimiter(Delimiter::EqualSign),
-
-    // Calculation Operators
-    r"^\+"              => TokenType::Calculation(Calculation::Addition),
-    r"^-"               => TokenType::Calculation(Calculation::Subtraction),
-    r"^/"               => TokenType::Calculation(Calculation::Division),
-    r"^\*"              => TokenType::Calculation(Calculation::Multiplication),
+    // Binary Operators
+    r"^=="              => TokenType::BinaryOperator(BinaryOperator::Equals),
+    r"^>="              => TokenType::BinaryOperator(BinaryOperator::LessOrEqual),
+    r"^>"               => TokenType::BinaryOperator(BinaryOperator::LessThan),
+    r"^<="              => TokenType::BinaryOperator(BinaryOperator::GreaterOrEqual),
+    r"^<"               => TokenType::BinaryOperator(BinaryOperator::GreaterThan),
+    r"^!="              => TokenType::BinaryOperator(BinaryOperator::NotEquals),
+    r"^="               => TokenType::BinaryOperator(BinaryOperator::Assignment),
+    r"^\+"              => TokenType::BinaryOperator(BinaryOperator::Addition),
+    r"^/"               => TokenType::BinaryOperator(BinaryOperator::Division),
+    r"^\*"              => TokenType::BinaryOperator(BinaryOperator::Multiplication),
+    r"^-"               => TokenType::BinaryOperator(BinaryOperator::Subtraction),
 
     // Identifier - Named value representing some value or other entity
     r"^[a-zA-Z_$][a-zA-Z_$0-9]*" => TokenType::Identifier,

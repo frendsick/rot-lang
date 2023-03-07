@@ -8,7 +8,6 @@ mod cli;
 mod compiler;
 mod constant;
 mod data_types;
-mod intrinsics;
 mod lexer;
 
 fn main() {
