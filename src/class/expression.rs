@@ -4,7 +4,7 @@ use crate::data_types::DataType;
 pub struct Expression {
     pub typ: ExpressionType,
     pub value: Option<String>,
-    pub expressions: Vec<Expression>,
+    pub expressions: Option<Vec<Expression>>,
 }
 
 #[derive(Debug, PartialEq)]

@@ -7,7 +7,7 @@ pub struct Statement {
     pub typ: StatementType,
     pub value: Option<String>,
     pub expression: Option<Expression>,
-    pub statements: Vec<Statement>,
+    pub statements: Option<Vec<Statement>>,
 }
 
 #[derive(Debug, PartialEq)]
