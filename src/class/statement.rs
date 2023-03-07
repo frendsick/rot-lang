@@ -1,6 +1,6 @@
 use crate::data_types::DataType;
 
-use super::expression::Expression;
+use super::{expression::Expression, signature::Signature};
 
 #[derive(Debug, PartialEq)]
 pub struct Statement {
@@ -15,7 +15,7 @@ pub enum StatementType {
     Compound,
     Conditional,
     Expression,
-    Function,
+    Function(Signature),
     Loop,
     NoOperation,
     Return,
