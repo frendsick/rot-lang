@@ -8,7 +8,7 @@ elif
 else
 endif
 enum
-function
+fun
 if
 include
 memory
