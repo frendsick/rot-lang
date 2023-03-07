@@ -32,9 +32,12 @@ pub enum Delimiter {
     Point,
     Comma,
     Colon,
+    SemiColon,
     EqualSign,
     OpenParen,
     CloseParen,
+    OpenSquare,
+    CloseSquare,
     OpenCurly,
     CloseCurly,
 }
@@ -123,12 +126,15 @@ pub const TOKEN_REGEXES: phf::OrderedMap<&str, TokenType> = phf_ordered_map!(
     // Delimiters
     r"^\("              => TokenType::Delimiter(Delimiter::OpenParen),
     r"^\)"              => TokenType::Delimiter(Delimiter::CloseParen),
+    r"^\["              => TokenType::Delimiter(Delimiter::OpenSquare),
+    r"^\]"              => TokenType::Delimiter(Delimiter::CloseSquare),
     r"^\{"              => TokenType::Delimiter(Delimiter::OpenCurly),
     r"^\}"              => TokenType::Delimiter(Delimiter::CloseCurly),
     r"^\."              => TokenType::Delimiter(Delimiter::Point),
     r"^,"               => TokenType::Delimiter(Delimiter::Comma),
     r"^->"              => TokenType::Delimiter(Delimiter::Arrow),
     r"^:"               => TokenType::Delimiter(Delimiter::Colon),
+    r"^;"               => TokenType::Delimiter(Delimiter::SemiColon),
 
     // Comparison Operators
     r"^=="              => TokenType::Comparison(Comparison::EQ),
