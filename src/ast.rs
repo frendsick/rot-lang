@@ -2,7 +2,7 @@ use crate::{
     class::{
         program::Program,
         signature::{Parameter, Signature},
-        statement::{Statement, StatementType},
+        statement::{Statement, StatementType, Conditional},
         token::{Delimiter, Keyword, Token, TokenType},
     },
     compiler::CompilerError,
@@ -30,7 +30,12 @@ pub fn get_next_statement(
         TokenType::Delimiter(Delimiter::SemiColon) => no_operation_statement(tokens, cursor),
         TokenType::Delimiter(Delimiter::OpenCurly) => compound_statement(tokens, cursor),
         TokenType::Keyword(Keyword::Fun) => function_statement(tokens, cursor),
-        _ => todo!("Parsing statement for {:?}", token),
+        TokenType::Keyword(Keyword::Return) => return_statement(tokens, cursor),
+        TokenType::Keyword(Keyword::If) => block_statement(tokens, cursor),
+        TokenType::Keyword(Keyword::Elif) => block_statement(tokens, cursor),
+        TokenType::Keyword(Keyword::Else) => block_statement(tokens, cursor),
+        TokenType::Keyword(Keyword::While) => block_statement(tokens, cursor),
+        _ => expression_statement(tokens, cursor),
     }
 }
 
@@ -79,6 +84,43 @@ fn function_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Stateme
         expression: None,
         statements: Some(vec![compound_statement(tokens, cursor)?]),
     })
+}
+
+fn return_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Statement, CompilerError> {
+    // return <expr>;
+    todo!()
+}
+
+fn block_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Statement, CompilerError> {
+    let typ: StatementType = block_statement_type_from_str(&tokens[*cursor].value);
+    *cursor += 1; // Go past initial Keyword
+    advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::OpenParen))?;
+    // let expression: Expression = parse_expression(tokens, cursor);
+    advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::CloseParen))?;
+    let statement: Statement = compound_statement(tokens, cursor)?;
+    Ok(Statement {
+        typ,
+        value: None,
+        expression: None, // TODO: Parse condition expression
+        statements: Some(vec![statement]),
+    })
+}
+
+fn block_statement_type_from_str(block_type_str: &str) -> StatementType {
+    match block_type_str {
+        "if" => StatementType::Conditional(Conditional::If),
+        "elif" => StatementType::Conditional(Conditional::Elif),
+        "else" => StatementType::Conditional(Conditional::Else),
+        "while" => StatementType::Loop,
+        _ => panic!("Unknown block type '{}'", block_type_str)
+    }
+}
+
+fn expression_statement(
+    tokens: &Vec<Token>,
+    cursor: &mut usize,
+) -> Result<Statement, CompilerError> {
+    todo!()
 }
 
 fn parse_function_parameters(
@@ -216,6 +258,20 @@ mod tests {
             StatementType::Function(signature)
         );
         // Function's Statement is always CompoundStatement
+        first_statement_is_compound(&program);
+    }
+
+    #[test]
+    fn parse_conditional_statement() {
+        let tokens: Vec<Token> = tokenize_code("if() { }", None);
+        let program: Program = generate_ast(&tokens).expect("Could not generate AST");
+        // Conditional statement is one statement
+        assert_eq!(program.statements.len(), 1);
+        // ConditionalStatement's Statement is always CompoundStatement
+        first_statement_is_compound(&program);
+    }
+
+    fn first_statement_is_compound(program: &Program) {
         assert_eq!(
             program.statements[0]
                 .statements

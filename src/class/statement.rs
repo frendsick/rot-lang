@@ -13,11 +13,18 @@ pub struct Statement {
 #[derive(Debug, PartialEq)]
 pub enum StatementType {
     Compound,
-    Conditional,
+    Conditional(Conditional),
     Expression,
     Function(Signature),
     Loop,
     NoOperation,
     Return,
     Variable(DataType),
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Conditional {
+    If,
+    Elif,
+    Else,
 }
