@@ -95,6 +95,12 @@ fn parse_function_parameters(
     .is_err()
     {
         parameters.push(parse_next_parameter(tokens, cursor)?);
+        // Parameters are separated by commas
+        // There can be a comma after the last parameter
+        // Example: fun foo(a: int, b: int,) { }
+        if peek_cursor(*cursor, tokens, &TokenType::Delimiter(Delimiter::Comma)).is_ok() {
+            *cursor += 1;
+        }
     }
     Ok(parameters)
 }
@@ -107,10 +113,6 @@ fn parse_next_parameter(
     advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::Colon))?;
     let datatype_str: String = advance_cursor(cursor, tokens, &TokenType::Identifier)?.value;
     let typ: DataType = datatype_from_string(&datatype_str);
-    // If the next token is a comma, there will be more parameters
-    if peek_cursor(*cursor, tokens, &TokenType::Delimiter(Delimiter::Comma)).is_ok() {
-        *cursor += 1;
-    }
     Ok(Parameter::new(name, typ))
 }
 
@@ -190,9 +192,15 @@ mod tests {
 
     #[test]
     fn parse_function_statement() {
+        // The comma after last parameter is optional
         let tokens: Vec<Token> = tokenize_code("fun foo(a:int, b:str) -> bool { }", None);
+        let tokens2: Vec<Token> = tokenize_code("fun foo(a:int, b:str,) -> bool { }", None);
         let program: Program = generate_ast(&tokens).expect("Could not generate AST");
+        let program2: Program = generate_ast(&tokens2).expect("Could not generate AST");
+        // Only one function is parsed
         assert_eq!(program.statements.len(), 1);
+        // Comma after the last parameter is optional
+        assert_eq!(program, program2);
         let parameters: Vec<Parameter> = vec![
             Parameter::new("a".to_string(), DataType::Integer),
             Parameter::new("b".to_string(), DataType::String),
@@ -202,6 +210,7 @@ mod tests {
             parameters,
             return_type,
         };
+        // Function signature is parsed correctly
         assert_eq!(
             program.statements[0].typ,
             StatementType::Function(signature)
