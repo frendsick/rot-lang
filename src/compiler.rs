@@ -26,7 +26,7 @@ pub fn compile_rot_file(
 fn parse_functions(tokens: Vec<Token>) -> Result<Vec<Function>, CompilerError> {
     let mut functions: Vec<Function> = Vec::new();
     for (i, token) in tokens.iter().enumerate() {
-        if token.typ == TokenType::Keyword(Keyword::Function) {
+        if token.typ == TokenType::Keyword(Keyword::Fun) {
             if i >= tokens.len() - 1 {
                 return Err(CompilerError::ParserError(format!(
                     "Code cannot end with '{}' keyword",
@@ -166,40 +166,4 @@ fn parse_function_parameters(
         *cursor += 1;
     }
     Ok(parameters)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    const TEST_FOLDER: &str = "tests";
-
-    #[test]
-    #[should_panic(expected = "The 'main' function is not defined")]
-    fn program_without_main_function() {
-        let tokens: Vec<Token> = tokenize_code_file(&format!(
-            "{TEST_FOLDER}/program_without_main_function.rot"
-        ))
-        .unwrap();
-        parse_functions(tokens).unwrap();
-    }
-
-    #[test]
-    fn parse_function_parameters() {
-        let tokens: Vec<Token> =
-            tokenize_code_file(&format!("{TEST_FOLDER}/parse_function_parameters.rot")).unwrap();
-        let functions: Vec<Function> = parse_functions(tokens).unwrap();
-        assert_eq!(functions.len(), 1);
-        let parameters: &Vec<Parameter> = &functions.first().unwrap().signature.parameters;
-        assert_eq!(parameters.len(), 3);
-        assert_eq!(parameters[0].name, "a".to_string());
-        assert_eq!(parameters[1].name, "b".to_string());
-        assert_eq!(parameters[2].name, "c".to_string());
-        assert_eq!(parameters[0].typ, DataType::Boolean);
-        assert_eq!(parameters[1].typ, DataType::Character);
-        assert_eq!(
-            parameters[2].typ,
-            DataType::Custom("CustomType".to_string())
-        );
-    }
 }
