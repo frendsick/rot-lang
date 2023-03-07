@@ -2,7 +2,7 @@ use crate::{
     class::{
         program::Program,
         statement::{Statement, StatementType},
-        token::{Delimiter, Token, TokenType},
+        token::{Delimiter, Token, TokenType, Keyword}, signature::Signature,
     },
     compiler::CompilerError,
 };
@@ -27,6 +27,7 @@ pub fn get_next_statement(
     match token.typ {
         TokenType::Delimiter(Delimiter::SemiColon) => no_operation_statement(tokens, cursor),
         TokenType::Delimiter(Delimiter::OpenCurly) => compound_statement(tokens, cursor),
+        TokenType::Keyword(Keyword::Fun) => function_statement(tokens, cursor),
         _ => todo!("Parsing statement for {:?}", token),
     }
 }
@@ -59,6 +60,23 @@ fn compound_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Stateme
     })
 }
 
+/// fun name(param1: int, param2: str) -> bool { }
+fn function_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Statement, CompilerError> {
+    advance_cursor(cursor, tokens, TokenType::Keyword(Keyword::Fun))?;
+    let function_name: String = advance_cursor(cursor, tokens, TokenType::Identifier)?.value;
+    advance_cursor(cursor, tokens, TokenType::Delimiter(Delimiter::OpenParen))?;
+    // TODO: Parameters
+    advance_cursor(cursor, tokens, TokenType::Delimiter(Delimiter::CloseParen))?;
+    // TODO: Return type
+    let signature: Signature = Signature { parameters: Vec::new(), return_type: Vec::new() };
+    Ok(Statement {
+        typ: StatementType::Function(signature), // TODO: Params, Return type
+        value: Some(function_name),
+        expression: None,
+        statements: Some(vec![compound_statement(tokens, cursor)?]),
+    })
+}
+
 fn advance_cursor(
     cursor: &mut usize,
     tokens: &Vec<Token>,
@@ -85,7 +103,7 @@ fn advance_cursor(
 mod tests {
     use super::*;
     use crate::lexer::tokenize_code;
-    use crate::{class::statement::StatementType, constant::TEST_FOLDER};
+    use crate::class::statement::StatementType;
 
     #[test]
     fn parse_no_operation_statement() {
@@ -109,5 +127,14 @@ mod tests {
             statement.statements.as_ref().unwrap().first().unwrap().typ,
             StatementType::Compound
         );
+    }
+
+    #[test]
+    fn parse_function_statement() {
+        let tokens: Vec<Token> = tokenize_code("fun foo() { }", None);
+        let program: Program = generate_ast(&tokens).expect("Could not generate AST");
+        assert_eq!(program.statements.len(), 1);
+        let signature: Signature = Signature { parameters: Vec::new(), return_type: Vec::new() };
+        assert_eq!(program.statements[0].typ, StatementType::Function(signature));
     }
 }
