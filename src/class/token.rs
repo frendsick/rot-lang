@@ -119,10 +119,10 @@ pub const TOKEN_REGEXES: phf::OrderedMap<&str, TokenType> = phf_ordered_map!(
 
     // Binary Operators
     r"^=="              => TokenType::BinaryOperator(BinaryOperator::Equals),
-    r"^>="              => TokenType::BinaryOperator(BinaryOperator::LessOrEqual),
-    r"^>"               => TokenType::BinaryOperator(BinaryOperator::LessThan),
-    r"^<="              => TokenType::BinaryOperator(BinaryOperator::GreaterOrEqual),
-    r"^<"               => TokenType::BinaryOperator(BinaryOperator::GreaterThan),
+    r"^>="              => TokenType::BinaryOperator(BinaryOperator::GreaterOrEqual),
+    r"^>"               => TokenType::BinaryOperator(BinaryOperator::GreaterThan),
+    r"^<="              => TokenType::BinaryOperator(BinaryOperator::LessOrEqual),
+    r"^<"               => TokenType::BinaryOperator(BinaryOperator::LessThan),
     r"^!="              => TokenType::BinaryOperator(BinaryOperator::NotEquals),
     r"^="               => TokenType::BinaryOperator(BinaryOperator::Assignment),
     r"^\+"              => TokenType::BinaryOperator(BinaryOperator::Addition),

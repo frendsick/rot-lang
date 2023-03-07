@@ -109,7 +109,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        class::token::{Delimiter, Keyword},
+        class::token::{Delimiter, Keyword, BinaryOperator},
         constant::TEST_FOLDER,
         data_types::DataType,
     };
@@ -156,6 +156,18 @@ mod tests {
     }
 
     #[test]
+    fn lex_binary_operators() {
+        let tokens: Vec<Token> =
+            tokenize_code_file(&format!("{TEST_FOLDER}/lex_binary_operators.rot")).unwrap();
+        // Are all DataTypes taken into account in the test file
+        assert_eq!(tokens.len(), BinaryOperator::COUNT);
+        // Are tokens lexed correctly as literal with certain type
+        for (i, operator) in BinaryOperator::iter().enumerate() {
+            assert_eq!(TokenType::BinaryOperator(operator), tokens[i].typ)
+        }
+    }
+
+    #[test]
     fn lex_delimiters() {
         let tokens: Vec<Token> =
             tokenize_code_file(&format!("{TEST_FOLDER}/lex_delimiters.rot")).unwrap();
@@ -175,7 +187,7 @@ mod tests {
         assert_eq!(tokens.len(), DataType::COUNT);
         // Are tokens lexed correctly as literal with certain type
         for (i, data_type) in DataType::iter().enumerate() {
-            // Pointer literals do not exist
+            // Do not test custom data types
             if i >= DataType::iter().len() - 1 {
                 continue;
             }
