@@ -308,12 +308,16 @@ mod tests {
 
     #[test]
     fn parse_conditional_statement() {
-        let tokens: Vec<Token> = tokenize_code("if() { }", None);
+        let tokens: Vec<Token> = tokenize_code("if(true) { }", None);
         let program: Program = generate_ast(&tokens).expect("Could not generate AST");
         // Conditional statement is one statement
         assert_eq!(program.statements.len(), 1);
         // ConditionalStatement's Statement is always CompoundStatement
         first_statement_is_compound(&program);
+        assert_eq!(
+            program.statements[0].expression.as_ref().unwrap().typ,
+            ExpressionType::Literal(Some(DataType::Boolean))
+        );
     }
 
     fn first_statement_is_compound(program: &Program) {
