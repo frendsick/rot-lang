@@ -111,7 +111,7 @@ mod tests {
     use crate::{
         class::token::{Delimiter, Keyword},
         constant::TEST_FOLDER,
-        data_types::{ChunkSize, DataType},
+        data_types::DataType,
     };
 
     #[test]
@@ -176,7 +176,7 @@ mod tests {
         // Are tokens lexed correctly as literal with certain type
         for (i, data_type) in DataType::iter().enumerate() {
             // Pointer literals do not exist
-            if data_type == DataType::Pointer || i >= DataType::iter().len() - 1 {
+            if i >= DataType::iter().len() - 1 {
                 continue;
             }
             assert_eq!(TokenType::Literal(data_type), tokens[i].typ)

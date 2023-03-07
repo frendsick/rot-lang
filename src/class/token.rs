@@ -1,7 +1,7 @@
 use phf::phf_ordered_map;
 use strum_macros::{EnumCount, EnumIter};
 
-use crate::data_types::{DataType, ChunkSize};
+use crate::data_types::DataType;
 
 use super::location::Location;
 
@@ -83,7 +83,7 @@ pub const TOKEN_REGEXES: phf::OrderedMap<&str, TokenType> = phf_ordered_map!(
     r"(?i)^true"        => TokenType::Literal(DataType::Boolean),
     r"(?i)^false"       => TokenType::Literal(DataType::Boolean),
     r"^'[^']'"          => TokenType::Literal(DataType::Character),
-    r"^\d+"             => TokenType::Literal(DataType::Integer(ChunkSize::Qword)),
+    r"^\d+"             => TokenType::Literal(DataType::Integer),
     r#"^"[^"]*""#       => TokenType::Literal(DataType::String),
 
     // Keywords
