@@ -7,7 +7,6 @@ use crate::{
         token::{Delimiter, Keyword, Token, TokenType},
     },
     compiler::CompilerError,
-    constant::EXPRESSION_DELIMITERS,
     data_types::{datatype_from_string, DataType},
 };
 
@@ -112,8 +111,10 @@ fn parse_expression(
     tokens: &Vec<Token>,
     cursor: &mut usize,
 ) -> Result<Expression, CompilerError> {
-    // Literal expression
-    if EXPRESSION_DELIMITERS.contains(&peek_cursor(*cursor + 1, tokens)?.value.as_str()) {
+    // Literal expression is followed by Delimiter or BinaryOperator
+    let lookahead_type: &TokenType = &peek_cursor(*cursor + 1, tokens)?.typ;
+    if matches!(lookahead_type, TokenType::Delimiter{ .. }) ||
+        matches!(lookahead_type, TokenType::BinaryOperator{ .. }) {
         return Ok(literal_expression(tokens, cursor)?);
     }
     *cursor += 1;
