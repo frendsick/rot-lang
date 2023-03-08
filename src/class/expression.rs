@@ -14,5 +14,6 @@ pub enum ExpressionType {
     Binary(BinaryOperator),
     Enclosure,
     FunctionCall,
+    Indexing,
     Literal(Option<DataType>),
 }

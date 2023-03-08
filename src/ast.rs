@@ -154,8 +154,8 @@ fn parse_combined_expression(
 
     // Function call expression
     if token_type == &TokenType::Delimiter(Delimiter::OpenParen) {
-        *cursor += 1;
         typ = ExpressionType::FunctionCall;
+        *cursor += 1;
         while peek_cursor(*cursor, tokens)?.typ != TokenType::Delimiter(Delimiter::CloseParen) {
             expressions.push(parse_combined_expression(tokens, cursor)?);
             // The next token after function parameter expression is either Comma or CloseParen
@@ -172,6 +172,14 @@ fn parse_combined_expression(
         }
         // Go past CloseParen
         *cursor += 1;
+    }
+
+    // Indexing expression
+    if token_type == &TokenType::Delimiter(Delimiter::OpenSquare) {
+        typ = ExpressionType::Indexing;
+        *cursor += 1;
+        expressions.push(parse_combined_expression(tokens, cursor)?);
+        advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::CloseSquare))?;
     }
 
     if expressions.len() == 1 {
@@ -475,6 +483,24 @@ mod tests {
                     mock_literal_expression("foo", None), // Function name
                     mock_literal_expression("a", None), // First parameter
                     mock_literal_expression("b", None), // Second parameter
+                ],
+            }
+        )
+    }
+
+    #[test]
+    fn parse_indexing_expression() {
+        let tokens: Vec<Token> = tokenize_code("list[42]", None);
+        let mut cursor: usize = 0;
+        let expression = parse_combined_expression(&tokens, &mut cursor).unwrap();
+        assert_eq!(
+            expression,
+            Expression {
+                typ: ExpressionType::Indexing,
+                value: None,
+                expressions: vec![
+                    mock_literal_expression("list", None),
+                    mock_literal_expression("42", Some(DataType::Integer)),
                 ],
             }
         )
