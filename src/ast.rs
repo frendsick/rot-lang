@@ -1,6 +1,7 @@
 use crate::{
     class::{
         expression::{Expression, ExpressionType},
+        function::Function,
         program::Program,
         signature::{Parameter, Signature},
         statement::{Conditional, Statement, StatementType},
@@ -11,26 +12,40 @@ use crate::{
 };
 
 pub fn generate_ast(tokens: &Vec<Token>) -> Result<Program, CompilerError> {
-    let mut statements: Vec<Statement> = Vec::new();
+    let mut functions: Vec<Function> = Vec::new();
     let mut cursor: usize = 0;
     while cursor < tokens.len() {
         let original_cursor: usize = cursor;
-        statements.push(get_next_statement(&tokens, &mut cursor)?);
+        functions.push(parse_function(&tokens, &mut cursor)?);
         // Prevent infinite loop
         assert_ne!(original_cursor, cursor);
     }
-    return Ok(Program { statements });
+    return Ok(Program { functions });
 }
 
-pub fn get_next_statement(
-    tokens: &Vec<Token>,
-    cursor: &mut usize,
-) -> Result<Statement, CompilerError> {
+/// fun name(param1: int, param2: str) -> bool { }
+fn parse_function(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Function, CompilerError> {
+    advance_cursor(cursor, tokens, &TokenType::Keyword(Keyword::Fun))?;
+    let name: String = advance_cursor(cursor, tokens, &TokenType::Identifier)?.value;
+    advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::OpenParen))?;
+    let parameters: Vec<Parameter> = parse_function_parameters(tokens, cursor)?;
+    advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::CloseParen))?;
+    let signature: Signature = Signature {
+        parameters,
+        return_type: parse_return_type(tokens, cursor)?,
+    };
+    Ok(Function {
+        name,
+        signature,
+        statement: compound_statement(tokens, cursor)?,
+    })
+}
+
+fn parse_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Statement, CompilerError> {
     let token: &Token = tokens.get(*cursor).unwrap();
     match token.typ {
         TokenType::Delimiter(Delimiter::SemiColon) => no_operation_statement(tokens, cursor),
         TokenType::Delimiter(Delimiter::OpenCurly) => compound_statement(tokens, cursor),
-        TokenType::Keyword(Keyword::Fun) => function_statement(tokens, cursor),
         TokenType::Keyword(Keyword::Return) => return_statement(tokens, cursor),
         TokenType::Keyword(Keyword::If) => block_statement(tokens, cursor),
         TokenType::Keyword(Keyword::Elif) => block_statement(tokens, cursor),
@@ -57,7 +72,7 @@ fn compound_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Stateme
     advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::OpenCurly))?;
     let mut statements: Vec<Statement> = Vec::new();
     while tokens[*cursor].typ != TokenType::Delimiter(Delimiter::CloseCurly) {
-        statements.push(get_next_statement(tokens, cursor)?);
+        statements.push(parse_statement(tokens, cursor)?);
     }
     advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::CloseCurly))?;
     Ok(Statement {
@@ -65,25 +80,6 @@ fn compound_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Stateme
         value: None,
         expression: None,
         statements: Some(statements),
-    })
-}
-
-/// fun name(param1: int, param2: str) -> bool { }
-fn function_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Statement, CompilerError> {
-    advance_cursor(cursor, tokens, &TokenType::Keyword(Keyword::Fun))?;
-    let function_name: String = advance_cursor(cursor, tokens, &TokenType::Identifier)?.value;
-    advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::OpenParen))?;
-    let parameters: Vec<Parameter> = parse_function_parameters(tokens, cursor)?;
-    advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::CloseParen))?;
-    let signature: Signature = Signature {
-        parameters,
-        return_type: parse_return_type(tokens, cursor)?,
-    };
-    Ok(Statement {
-        typ: StatementType::Function(signature), // TODO: Params, Return type
-        value: Some(function_name),
-        expression: None,
-        statements: Some(vec![compound_statement(tokens, cursor)?]),
     })
 }
 
@@ -103,7 +99,7 @@ fn block_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Statement,
     let typ: StatementType = block_statement_type_from_str(&tokens[*cursor].value);
     *cursor += 1; // Go past initial Keyword
     let expression: Expression = enclosure_expression(tokens, cursor)?;
-    let statement: Statement = compound_statement(tokens, cursor)?;
+    let statement = compound_statement(tokens, cursor)?;
     Ok(Statement {
         typ,
         value: None,
@@ -291,38 +287,31 @@ mod tests {
     #[test]
     fn parse_no_operation_statement() {
         let tokens: Vec<Token> = tokenize_code(";", None);
-        let program: Program = generate_ast(&tokens).expect("Could not generate AST");
-        assert_eq!(program.statements.len(), 1);
-        assert_eq!(program.statements[0].typ, StatementType::NoOperation);
+        let mut cursor: usize = 0;
+        let statement = no_operation_statement(&tokens, &mut cursor).unwrap();
+        assert_eq!(statement.typ, StatementType::NoOperation);
     }
 
     #[test]
     fn parse_compound_statement() {
         // Compound statement with inner compound statement
         let tokens: Vec<Token> = tokenize_code("{{ }}", None);
-        let program: Program = generate_ast(&tokens).expect("Could not generate AST");
-        assert_eq!(program.statements.len(), 1);
-        let statement: &Statement = program.statements.first().unwrap();
-        // Outer compound statement
-        assert_eq!(statement.typ, StatementType::Compound);
+        let mut cursor: usize = 0;
+        let statement = compound_statement(&tokens, &mut cursor).unwrap();
         // Inner compound statement
-        assert_eq!(
-            statement.statements.as_ref().unwrap().first().unwrap().typ,
-            StatementType::Compound
-        );
+        assert_inner_statement_type(&statement, StatementType::Compound);
     }
 
     #[test]
-    fn parse_function_statement() {
+    fn parse_functions() {
         // The comma after last parameter is optional
         let tokens: Vec<Token> = tokenize_code("fun foo(a:int, b:str) -> bool { }", None);
         let tokens2: Vec<Token> = tokenize_code("fun foo(a:int, b:str,) -> bool { }", None);
-        let program: Program = generate_ast(&tokens).expect("Could not generate AST");
-        let program2: Program = generate_ast(&tokens2).expect("Could not generate AST");
-        // Only one function is parsed
-        assert_eq!(program.statements.len(), 1);
-        // Comma after the last parameter is optional
-        assert_eq!(program, program2);
+        let mut cursor: usize = 0;
+        let function = parse_function(&tokens, &mut cursor).unwrap();
+        let mut cursor2: usize = 0;
+        let function2 = parse_function(&tokens2, &mut cursor2).unwrap();
+        assert_eq!(function, function2);
         let parameters: Vec<Parameter> = vec![
             Parameter::new("a".to_string(), DataType::Integer),
             Parameter::new("b".to_string(), DataType::String),
@@ -333,25 +322,21 @@ mod tests {
             return_type,
         };
         // Function signature is parsed correctly
-        assert_eq!(
-            program.statements[0].typ,
-            StatementType::Function(signature)
-        );
+        assert_eq!(function.signature, signature);
         // Function's Statement is always CompoundStatement
-        first_statement_type(&program, StatementType::Compound);
+        assert_eq!(function.statement.typ, StatementType::Compound);
     }
 
     #[test]
     fn parse_conditional_statement() {
         let tokens: Vec<Token> = tokenize_code("if(true) { }", None);
-        let program: Program = generate_ast(&tokens).expect("Could not generate AST");
-        // Conditional statement is one statement
-        assert_eq!(program.statements.len(), 1);
+        let mut cursor: usize = 0;
+        let statement = block_statement(&tokens, &mut cursor).unwrap();
         // ConditionalStatement's Statement is always CompoundStatement with enclosure expression
-        first_statement_type(&program, StatementType::Compound);
-        first_expression_type(&program, ExpressionType::Enclosure);
+        assert_inner_statement_type(&statement, StatementType::Compound);
+        assert_inner_expression_type(&statement, ExpressionType::Enclosure);
         // Test the conditional inside enclosure
-        let inner_expressions: &Vec<Expression> = extract_inner_expressions(&program);
+        let inner_expressions: &Vec<Expression> = extract_inner_expressions(&statement);
         assert_eq!(
             inner_expressions[0].typ,
             ExpressionType::Literal(Some(DataType::Boolean))
@@ -361,21 +346,20 @@ mod tests {
     #[test]
     fn parse_expression_statement() {
         let tokens: Vec<Token> = tokenize_code("1337;", None);
-        let program: Program = generate_ast(&tokens).expect("Could not generate AST");
-        // Expression statement is one statement
-        assert_eq!(program.statements.len(), 1);
-        assert_eq!(program.statements[0].typ, StatementType::Expression);
-        first_expression_type(&program, ExpressionType::Literal(Some(DataType::Integer)));
+        let mut cursor: usize = 0;
+        let statement = expression_statement(&tokens, &mut cursor).expect("Could not generate AST");
+        assert_eq!(statement.typ, StatementType::Expression);
+        assert_inner_expression_type(&statement, ExpressionType::Literal(Some(DataType::Integer)));
     }
 
     #[test]
     fn parse_return_statement() {
         let tokens: Vec<Token> = tokenize_code("return 42;", None);
-        let program: Program = generate_ast(&tokens).expect("Could not generate AST");
+        let mut cursor: usize = 0;
+        let statement = return_statement(&tokens, &mut cursor).unwrap();
         // Expression statement is one statement
-        assert_eq!(program.statements.len(), 1);
-        assert_eq!(program.statements[0].typ, StatementType::Return);
-        first_expression_type(&program, ExpressionType::Literal(Some(DataType::Integer)));
+        assert_eq!(statement.typ, StatementType::Return);
+        assert_inner_expression_type(&statement, ExpressionType::Literal(Some(DataType::Integer)));
     }
 
     #[test]
@@ -432,28 +416,19 @@ mod tests {
         }
     }
 
-    fn first_expression_type(program: &Program, expected: ExpressionType) {
-        assert_eq!(
-            program.statements[0].expression.as_ref().unwrap().typ,
-            expected
-        )
+    fn assert_inner_expression_type(statement: &Statement, expected: ExpressionType) {
+        assert_eq!(statement.expression.as_ref().unwrap().typ, expected)
     }
 
-    fn first_statement_type(program: &Program, expected: StatementType) {
+    fn assert_inner_statement_type(statement: &Statement, expected: StatementType) {
         assert_eq!(
-            program.statements[0]
-                .statements
-                .as_ref()
-                .unwrap()
-                .first()
-                .unwrap()
-                .typ,
+            statement.statements.as_ref().unwrap().first().unwrap().typ,
             expected,
         )
     }
 
-    fn extract_inner_expressions(program: &Program) -> &Vec<Expression> {
-        program.statements[0]
+    fn extract_inner_expressions(statement: &Statement) -> &Vec<Expression> {
+        statement
             .expression
             .as_ref()
             .unwrap()
