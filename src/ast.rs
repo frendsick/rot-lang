@@ -101,7 +101,10 @@ fn assignment_statement(
     cursor: &mut usize,
 ) -> Result<Statement, CompilerError> {
     advance_cursor(cursor, tokens, &TokenType::Keyword(Keyword::Let))?;
-    let token = advance_cursor(cursor, tokens, &TokenType::Identifier)?;
+    let variable_name: String = advance_cursor(cursor, tokens, &TokenType::Identifier)?.value;
+    advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::Colon))?;
+    let data_type =
+        datatype_from_string(&advance_cursor(cursor, tokens, &TokenType::Identifier)?.value);
     advance_cursor(
         cursor,
         tokens,
@@ -110,8 +113,8 @@ fn assignment_statement(
     let expression = parse_expression(tokens, cursor)?;
     advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::SemiColon))?;
     Ok(Statement {
-        typ: StatementType::Assignment(token),
-        value: None,
+        typ: StatementType::Assignment(data_type),
+        value: Some(variable_name),
         expression: Some(expression),
         statements: None,
     })
@@ -119,13 +122,16 @@ fn assignment_statement(
 
 fn block_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Statement, CompilerError> {
     let typ: StatementType = block_statement_type_from_str(&tokens[*cursor].value);
+    let mut expression: Option<Expression> = None;
     *cursor += 1; // Go past initial Keyword
-    let expression: Expression = enclosure_expression(tokens, cursor)?;
+    if &tokens[*cursor - 1].typ != &TokenType::Keyword(Keyword::Else) {
+        expression = Some(enclosure_expression(tokens, cursor)?);
+    }
     let statement = compound_statement(tokens, cursor)?;
     Ok(Statement {
         typ,
         value: None,
-        expression: Some(expression),
+        expression,
         statements: Some(vec![statement]),
     })
 }
@@ -140,10 +146,11 @@ fn parse_expression(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Expressio
     if matches!(lookahead_type, TokenType::Delimiter { .. }) {
         return Ok(literal_expression(tokens, cursor)?);
     }
-
-    *cursor += 1;
     // TODO: Parse other expressions
-    todo!("Parse all expression types")
+    todo!(
+        "Parse all expression types. Current token: {:?}",
+        tokens[*cursor]
+    )
 }
 
 fn enclosure_expression(
@@ -386,18 +393,14 @@ mod tests {
 
     #[test]
     fn parse_assignment_statement() {
-        let tokens: Vec<Token> = tokenize_code("let nice = 69;", None);
+        let tokens: Vec<Token> = tokenize_code("let nice: int = 69;", None);
         let mut cursor: usize = 0;
         let statement = assignment_statement(&tokens, &mut cursor).unwrap();
         assert_eq!(
             statement,
             Statement {
-                typ: StatementType::Assignment(Token {
-                    value: "nice".to_string(),
-                    typ: TokenType::Identifier,
-                    location: tokens[1].location.clone(),
-                }),
-                value: None,
+                typ: StatementType::Assignment(datatype_from_string(&tokens[3].value)),
+                value: Some(tokens[1].value.clone()),
                 expression: Some(mock_literal_expression("69", DataType::Integer)),
                 statements: None,
             }
