@@ -37,6 +37,15 @@ pub enum BinaryOperator {
     NotEquals,
 }
 
+impl Into<Option<BinaryOperator>> for TokenType {
+    fn into(self) -> Option<BinaryOperator> {
+        match self {
+            TokenType::BinaryOperator(operator) => Some(operator),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, EnumCount, EnumIter)]
 pub enum Delimiter {
     Arrow,

@@ -4,7 +4,7 @@ use crate::{
         program::Program,
         signature::{Parameter, Signature},
         statement::{Conditional, Statement, StatementType},
-        token::{Delimiter, Keyword, Token, TokenType},
+        token::{Delimiter, Keyword, Token, TokenType, BinaryOperator},
     },
     compiler::CompilerError,
     data_types::{datatype_from_string, DataType},
@@ -107,19 +107,33 @@ fn block_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Statement,
     })
 }
 
-fn parse_expression(
-    tokens: &Vec<Token>,
-    cursor: &mut usize,
-) -> Result<Expression, CompilerError> {
-    // Literal expression is followed by Delimiter or BinaryOperator
+fn parse_expression(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Expression, CompilerError> {
+    // Literal expression is followed by Delimiter
     let lookahead_type: &TokenType = &peek_cursor(*cursor + 1, tokens)?.typ;
-    if matches!(lookahead_type, TokenType::Delimiter{ .. }) ||
-        matches!(lookahead_type, TokenType::BinaryOperator{ .. }) {
+    if matches!(lookahead_type, TokenType::Delimiter { .. }) {
         return Ok(literal_expression(tokens, cursor)?);
     }
+
+    // Binary Expression
+    if matches!(lookahead_type, TokenType::BinaryOperator { .. }) {
+        return Ok(binary_expression(tokens, cursor)?);
+    }
+
     *cursor += 1;
     // TODO: Parse other expressions
     todo!("Parse all expression types")
+}
+
+fn binary_expression(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Expression, CompilerError> {
+    let mut expressions: Vec<Expression> = vec![literal_expression(tokens, cursor)?];
+    let binary_option: Option<BinaryOperator> = TokenType::into(peek_cursor(*cursor, tokens)?.typ);
+    *cursor += 1; // Go past BinaryOperator
+    expressions.push(parse_expression(tokens, cursor)?);
+    return Ok(Expression {
+        typ: ExpressionType::Binary(binary_option.unwrap()),
+        value: None,
+        expressions: Some(expressions),
+    });
 }
 
 fn literal_expression(

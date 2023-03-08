@@ -1,5 +1,7 @@
 use crate::data_types::DataType;
 
+use super::token::BinaryOperator;
+
 #[derive(Debug, PartialEq)]
 pub struct Expression {
     pub typ: ExpressionType,
@@ -9,7 +11,7 @@ pub struct Expression {
 
 #[derive(Debug, PartialEq)]
 pub enum ExpressionType {
-    Binary,
+    Binary(BinaryOperator),
     Enclosure,
     FunctionCall,
     Identifier,
