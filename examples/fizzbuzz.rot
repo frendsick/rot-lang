@@ -5,15 +5,16 @@ fun main() {
 fun fizzbuzz(limit: int) {
     let i: int = 0;
     while(i < limit) {
-        if(i%3 == 0) {
+        if(i % 3 == 0) {
             print("Fizz");
         }
-        elif(i%5 == 0) {
+        elif(i % 5 == 0) {
             print("Buzz");
         }
         else {
             print(i);
         }
         print("\n");
+        i = i + 1;
     }
 }
