@@ -4,7 +4,7 @@ use crate::{
         program::Program,
         signature::{Parameter, Signature},
         statement::{Conditional, Statement, StatementType},
-        token::{Delimiter, Keyword, Token, TokenType, BinaryOperator},
+        token::{BinaryOperator, Delimiter, Keyword, Token, TokenType},
     },
     compiler::CompilerError,
     data_types::{datatype_from_string, DataType},
@@ -95,9 +95,7 @@ fn return_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Statement
 fn block_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Statement, CompilerError> {
     let typ: StatementType = block_statement_type_from_str(&tokens[*cursor].value);
     *cursor += 1; // Go past initial Keyword
-    advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::OpenParen))?;
-    let expression: Expression = parse_expression(tokens, cursor)?;
-    advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::CloseParen))?;
+    let expression: Expression = enclosure_expression(tokens, cursor)?;
     let statement: Statement = compound_statement(tokens, cursor)?;
     Ok(Statement {
         typ,
@@ -108,20 +106,33 @@ fn block_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Statement,
 }
 
 fn parse_expression(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Expression, CompilerError> {
+    if &peek_cursor(*cursor, tokens)?.typ == &TokenType::Delimiter(Delimiter::OpenParen) {
+        return Ok(enclosure_expression(tokens, cursor)?);
+    }
+
     // Literal expression is followed by Delimiter
     let lookahead_type: &TokenType = &peek_cursor(*cursor + 1, tokens)?.typ;
     if matches!(lookahead_type, TokenType::Delimiter { .. }) {
         return Ok(literal_expression(tokens, cursor)?);
     }
 
-    // Binary Expression
-    if matches!(lookahead_type, TokenType::BinaryOperator { .. }) {
-        return Ok(binary_expression(tokens, cursor)?);
-    }
-
     *cursor += 1;
     // TODO: Parse other expressions
     todo!("Parse all expression types")
+}
+
+fn enclosure_expression(
+    tokens: &Vec<Token>,
+    cursor: &mut usize,
+) -> Result<Expression, CompilerError> {
+    advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::OpenParen))?;
+    let expression = parse_expression(tokens, cursor)?;
+    advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::CloseParen))?;
+    return Ok(Expression {
+        typ: ExpressionType::Enclosure,
+        value: None,
+        expressions: Some(vec![expression]),
+    });
 }
 
 fn binary_expression(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Expression, CompilerError> {
