@@ -28,6 +28,7 @@ pub enum BinaryOperator {
     Subtraction,
     Division,
     Multiplication,
+    Modulus,
     Assignment,
     Equals,
     GreaterOrEqual,
@@ -126,6 +127,7 @@ pub const TOKEN_REGEXES: phf::OrderedMap<&str, TokenType> = phf_ordered_map!(
     r"^/"               => TokenType::BinaryOperator(BinaryOperator::Division),
     r"^\*"              => TokenType::BinaryOperator(BinaryOperator::Multiplication),
     r"^-"               => TokenType::BinaryOperator(BinaryOperator::Subtraction),
+    r"^%"               => TokenType::BinaryOperator(BinaryOperator::Modulus),
 
     // Identifier - Named value representing some value or other entity
     r"^[a-zA-Z_$][a-zA-Z_$0-9]*" => TokenType::Identifier,
