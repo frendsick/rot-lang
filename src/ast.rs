@@ -146,11 +146,36 @@ fn parse_expression(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Expressio
     if matches!(lookahead_type, TokenType::Delimiter { .. }) {
         return Ok(literal_expression(tokens, cursor)?);
     }
+
+    // Function call
+    if &peek_cursor(*cursor, tokens)?.typ == &TokenType::Identifier
+        && lookahead_type == &TokenType::Delimiter(Delimiter::OpenParen)
+    {
+        return Ok(function_call_expression(tokens, cursor)?);
+    }
+
     // TODO: Parse other expressions
     todo!(
         "Parse all expression types. Current token: {:?}",
         tokens[*cursor]
     )
+}
+
+fn function_call_expression(
+    tokens: &Vec<Token>,
+    cursor: &mut usize,
+) -> Result<Expression, CompilerError> {
+    let function_name: String = advance_cursor(cursor, tokens, &TokenType::Identifier)?.value;
+    advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::OpenParen))?;
+    let expressions: Vec<Expression> = Vec::new();
+    // TODO: Parse parameters as expressions separated by commas
+    advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::CloseParen))?;
+    Ok(Expression {
+        typ: ExpressionType::FunctionCall,
+        value: Some(function_name),
+        expressions: Some(expressions),
+    })
+
 }
 
 fn enclosure_expression(
@@ -430,6 +455,22 @@ mod tests {
                 typ: ExpressionType::Enclosure,
                 value: None,
                 expressions: Some(vec![mock_literal_expression("false", DataType::Boolean)]),
+            }
+        )
+    }
+
+    #[test]
+    fn parse_function_expression() {
+        let function_name: &str = "foo";
+        let tokens: Vec<Token> = tokenize_code(&format!("{function_name}()"), None);
+        let mut cursor: usize = 0;
+        let expression = function_call_expression(&tokens, &mut cursor).unwrap();
+        assert_eq!(
+            expression,
+            Expression {
+                typ: ExpressionType::FunctionCall,
+                value: Some(function_name.to_string()),
+                expressions: Some(Vec::new()),
             }
         )
     }
