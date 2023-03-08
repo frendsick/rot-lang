@@ -7,6 +7,7 @@ use crate::lexer::tokenize_code_file;
 pub enum CompilerError {
     IOError(std::io::Error),
     ParserError(String),
+    SyntaxError(String),
 }
 
 pub fn compile_rot_file(rot_file: &str, _out_file: Option<String>) -> Result<(), CompilerError> {

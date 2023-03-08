@@ -167,15 +167,24 @@ fn function_call_expression(
 ) -> Result<Expression, CompilerError> {
     let function_name: String = advance_cursor(cursor, tokens, &TokenType::Identifier)?.value;
     advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::OpenParen))?;
-    let expressions: Vec<Expression> = Vec::new();
-    // TODO: Parse parameters as expressions separated by commas
+    let mut expressions: Vec<Expression> = Vec::new();
+    while peek_cursor(*cursor, tokens)?.typ != TokenType::Delimiter(Delimiter::CloseParen) {
+        expressions.push(parse_expression(tokens, cursor)?);
+        if peek_cursor(*cursor, tokens)?.typ == TokenType::Delimiter(Delimiter::Comma) {
+            *cursor += 1;
+        } else if peek_cursor(*cursor, tokens)?.typ != TokenType::Delimiter(Delimiter::CloseParen) {
+            return Err(CompilerError::SyntaxError(format!(
+                "Expected ',' or ')' but got '{}'",
+                tokens[*cursor].value
+            )));
+        }
+    }
     advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::CloseParen))?;
     Ok(Expression {
         typ: ExpressionType::FunctionCall,
         value: Some(function_name),
         expressions: Some(expressions),
     })
-
 }
 
 fn enclosure_expression(
@@ -426,7 +435,7 @@ mod tests {
             Statement {
                 typ: StatementType::Assignment(datatype_from_string(&tokens[3].value)),
                 value: Some(tokens[1].value.clone()),
-                expression: Some(mock_literal_expression("69", DataType::Integer)),
+                expression: Some(mock_literal_expression("69", Some(DataType::Integer))),
                 statements: None,
             }
         );
@@ -440,7 +449,7 @@ mod tests {
         let expression = literal_expression(&tokens, &mut cursor).unwrap();
         assert_eq!(
             expression,
-            mock_literal_expression(literal, DataType::Integer)
+            mock_literal_expression(literal, Some(DataType::Integer))
         )
     }
 
@@ -454,15 +463,15 @@ mod tests {
             Expression {
                 typ: ExpressionType::Enclosure,
                 value: None,
-                expressions: Some(vec![mock_literal_expression("false", DataType::Boolean)]),
+                expressions: Some(vec![mock_literal_expression("false", Some(DataType::Boolean))]),
             }
         )
     }
 
     #[test]
-    fn parse_function_expression() {
+    fn parse_function_call_expression() {
         let function_name: &str = "foo";
-        let tokens: Vec<Token> = tokenize_code(&format!("{function_name}()"), None);
+        let tokens: Vec<Token> = tokenize_code(&format!("{function_name}(a,b)"), None);
         let mut cursor: usize = 0;
         let expression = function_call_expression(&tokens, &mut cursor).unwrap();
         assert_eq!(
@@ -470,7 +479,10 @@ mod tests {
             Expression {
                 typ: ExpressionType::FunctionCall,
                 value: Some(function_name.to_string()),
-                expressions: Some(Vec::new()),
+                expressions: Some(vec![
+                    mock_literal_expression("a", None),
+                    mock_literal_expression("b", None),
+                ]),
             }
         )
     }
@@ -487,16 +499,16 @@ mod tests {
                 typ: ExpressionType::Binary(BinaryOperator::Addition),
                 value: None,
                 expressions: Some(vec![
-                    mock_literal_expression("34", DataType::Integer),
-                    mock_literal_expression("35", DataType::Integer),
+                    mock_literal_expression("34", Some(DataType::Integer)),
+                    mock_literal_expression("35", Some(DataType::Integer)),
                 ]),
             }
         )
     }
 
-    fn mock_literal_expression(value: &str, data_type: DataType) -> Expression {
+    fn mock_literal_expression(value: &str, data_type: Option<DataType>) -> Expression {
         Expression {
-            typ: ExpressionType::Literal(Some(data_type)),
+            typ: ExpressionType::Literal(data_type),
             value: Some(value.to_string()),
             expressions: None,
         }
