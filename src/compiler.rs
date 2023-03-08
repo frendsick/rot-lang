@@ -3,6 +3,8 @@ use crate::class::program::Program;
 use crate::class::token::Token;
 use crate::lexer::tokenize_code_file;
 
+// TODO: Show meaningful information about the environment
+// Examples: Current Token, Locations, good error messages
 #[derive(Debug)]
 pub enum CompilerError {
     IOError(std::io::Error),
