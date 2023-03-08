@@ -179,7 +179,11 @@ fn parse_combined_expression(
         typ = ExpressionType::Indexing;
         *cursor += 1;
         expressions.push(parse_combined_expression(tokens, cursor)?);
-        advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::CloseSquare))?;
+        advance_cursor(
+            cursor,
+            tokens,
+            &TokenType::Delimiter(Delimiter::CloseSquare),
+        )?;
     }
 
     if expressions.len() == 1 {
@@ -218,19 +222,26 @@ fn literal_expression(
     cursor: &mut usize,
 ) -> Result<Expression, CompilerError> {
     let index: usize = *cursor;
+    let token = &tokens[index];
     *cursor += 1;
-    match &tokens[index].typ {
-        TokenType::Literal(data_type) => Ok(Expression {
-            typ: ExpressionType::Literal(Some(data_type.clone())),
-            value: Some(tokens[index].value.clone()),
-            expressions: Vec::new(),
-        }),
-        TokenType::Identifier => Ok(Expression {
-            typ: ExpressionType::Literal(None),
-            value: Some(tokens[index].value.clone()),
-            expressions: Vec::new(),
-        }),
+    match &token.typ {
+        TokenType::Literal(data_type) => {
+            let mut value: &str = token.value.as_str();
+            if data_type == &DataType::Character || data_type == &DataType::String {
+                value = &value[1 .. value.len()-1];
+            }
+            Ok(create_literal_expression(value, Some(data_type.clone())))
+        },
+        TokenType::Identifier => Ok(create_literal_expression(&token.value, None)),
         _ => panic!("Unknown literal token '{}'", tokens[*cursor].value),
+    }
+}
+
+fn create_literal_expression(value: &str, data_type: Option<DataType>) -> Expression {
+    Expression {
+        typ: ExpressionType::Literal(data_type),
+        value: Some(value.to_string()),
+        expressions: Vec::new(),
     }
 }
 
@@ -435,7 +446,7 @@ mod tests {
             Statement {
                 typ: StatementType::Assignment(datatype_from_string(&tokens[3].value)),
                 value: Some(tokens[1].value.clone()),
-                expression: Some(mock_literal_expression("69", Some(DataType::Integer))),
+                expression: Some(create_literal_expression("69", Some(DataType::Integer))),
                 statements: None,
             }
         );
@@ -449,7 +460,7 @@ mod tests {
         let expression = literal_expression(&tokens, &mut cursor).unwrap();
         assert_eq!(
             expression,
-            mock_literal_expression(literal, Some(DataType::Integer))
+            create_literal_expression(literal, Some(DataType::Integer))
         )
     }
 
@@ -463,7 +474,7 @@ mod tests {
             Expression {
                 typ: ExpressionType::Enclosure,
                 value: None,
-                expressions: vec![mock_literal_expression("false", Some(DataType::Boolean))],
+                expressions: vec![create_literal_expression("false", Some(DataType::Boolean))],
             }
         )
     }
@@ -480,9 +491,9 @@ mod tests {
                 typ: ExpressionType::FunctionCall,
                 value: None,
                 expressions: vec![
-                    mock_literal_expression("foo", None), // Function name
-                    mock_literal_expression("a", None), // First parameter
-                    mock_literal_expression("b", None), // Second parameter
+                    create_literal_expression("foo", None), // Function name
+                    create_literal_expression("a", None),   // First parameter
+                    create_literal_expression("b", None),   // Second parameter
                 ],
             }
         )
@@ -499,8 +510,8 @@ mod tests {
                 typ: ExpressionType::Indexing,
                 value: None,
                 expressions: vec![
-                    mock_literal_expression("list", None),
-                    mock_literal_expression("42", Some(DataType::Integer)),
+                    create_literal_expression("list", None),
+                    create_literal_expression("42", Some(DataType::Integer)),
                 ],
             }
         )
@@ -517,19 +528,11 @@ mod tests {
                 typ: ExpressionType::Binary(BinaryOperator::Addition),
                 value: None,
                 expressions: vec![
-                    mock_literal_expression("34", Some(DataType::Integer)),
-                    mock_literal_expression("35", Some(DataType::Integer)),
+                    create_literal_expression("34", Some(DataType::Integer)),
+                    create_literal_expression("35", Some(DataType::Integer)),
                 ],
             }
         )
-    }
-
-    fn mock_literal_expression(value: &str, data_type: Option<DataType>) -> Expression {
-        Expression {
-            typ: ExpressionType::Literal(data_type),
-            value: Some(value.to_string()),
-            expressions: Vec::new(),
-        }
     }
 
     fn assert_inner_expression_type(statement: &Statement, expected: ExpressionType) {
