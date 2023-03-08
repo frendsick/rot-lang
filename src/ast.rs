@@ -331,7 +331,7 @@ mod tests {
             StatementType::Function(signature)
         );
         // Function's Statement is always CompoundStatement
-        first_statement_is_compound(&program);
+        first_statement_type(&program, StatementType::Compound);
     }
 
     #[test]
@@ -340,15 +340,32 @@ mod tests {
         let program: Program = generate_ast(&tokens).expect("Could not generate AST");
         // Conditional statement is one statement
         assert_eq!(program.statements.len(), 1);
-        // ConditionalStatement's Statement is always CompoundStatement
-        first_statement_is_compound(&program);
-        assert_eq!(
-            program.statements[0].expression.as_ref().unwrap().typ,
-            ExpressionType::Literal(Some(DataType::Boolean))
-        );
+        // ConditionalStatement's Statement is always CompoundStatement with enclosure expression
+        first_statement_type(&program, StatementType::Compound);
+        first_expression_type(&program, ExpressionType::Enclosure);
+        // Test the conditional inside enclosure
+        let inner_expressions: &Vec<Expression> = extract_inner_expressions(&program);
+        assert_eq!(inner_expressions[0].typ, ExpressionType::Literal(Some(DataType::Boolean)));
     }
 
-    fn first_statement_is_compound(program: &Program) {
+    #[test]
+    fn parse_expression_statement() {
+        let tokens: Vec<Token> = tokenize_code("1337;", None);
+        let program: Program = generate_ast(&tokens).expect("Could not generate AST");
+        // Expression statement is one statement
+        assert_eq!(program.statements.len(), 1);
+        assert_eq!(program.statements[0].typ, StatementType::Expression);
+        first_expression_type(&program, ExpressionType::Literal(Some(DataType::Integer)));
+    }
+
+    fn first_expression_type(program: &Program, expected: ExpressionType) {
+        assert_eq!(
+            program.statements[0].expression.as_ref().unwrap().typ,
+            expected
+        )
+    }
+
+    fn first_statement_type(program: &Program, expected: StatementType) {
         assert_eq!(
             program.statements[0]
                 .statements
@@ -357,7 +374,17 @@ mod tests {
                 .first()
                 .unwrap()
                 .typ,
-            StatementType::Compound
+            expected,
         )
+    }
+
+    fn extract_inner_expressions(program: &Program) -> &Vec<Expression> {
+        program.statements[0]
+            .expression
+            .as_ref()
+            .unwrap()
+            .expressions
+            .as_ref()
+            .unwrap()
     }
 }
