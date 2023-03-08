@@ -97,13 +97,13 @@ fn block_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Statement,
     let typ: StatementType = block_statement_type_from_str(&tokens[*cursor].value);
     *cursor += 1; // Go past initial Keyword
     advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::OpenParen))?;
-    let expression: Option<Expression> = parse_expression(tokens, cursor)?;
+    let expression: Expression = parse_expression(tokens, cursor)?;
     advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::CloseParen))?;
     let statement: Statement = compound_statement(tokens, cursor)?;
     Ok(Statement {
         typ,
         value: None,
-        expression,
+        expression: Some(expression),
         statements: Some(vec![statement]),
     })
 }
@@ -111,19 +111,14 @@ fn block_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Statement,
 fn parse_expression(
     tokens: &Vec<Token>,
     cursor: &mut usize,
-) -> Result<Option<Expression>, CompilerError> {
-    // No expression
-    if EXPRESSION_DELIMITERS.contains(&peek_cursor(*cursor, tokens)?.value.as_str()) {
-        return Ok(None);
-    }
-
+) -> Result<Expression, CompilerError> {
     // Literal expression
     if EXPRESSION_DELIMITERS.contains(&peek_cursor(*cursor + 1, tokens)?.value.as_str()) {
-        return Ok(Some(literal_expression(tokens, cursor)?));
+        return Ok(literal_expression(tokens, cursor)?);
     }
     *cursor += 1;
     // TODO: Parse other expressions
-    Ok(None)
+    todo!("Parse all expression types")
 }
 
 fn literal_expression(
@@ -161,7 +156,14 @@ fn expression_statement(
     tokens: &Vec<Token>,
     cursor: &mut usize,
 ) -> Result<Statement, CompilerError> {
-    todo!()
+    let expression: Expression = parse_expression(tokens, cursor)?;
+    advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::SemiColon))?;
+    Ok(Statement {
+        typ: StatementType::Expression,
+        value: None,
+        expression: Some(expression),
+        statements: None,
+    })
 }
 
 fn parse_function_parameters(
