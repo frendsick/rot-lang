@@ -345,7 +345,10 @@ mod tests {
         first_expression_type(&program, ExpressionType::Enclosure);
         // Test the conditional inside enclosure
         let inner_expressions: &Vec<Expression> = extract_inner_expressions(&program);
-        assert_eq!(inner_expressions[0].typ, ExpressionType::Literal(Some(DataType::Boolean)));
+        assert_eq!(
+            inner_expressions[0].typ,
+            ExpressionType::Literal(Some(DataType::Boolean))
+        );
     }
 
     #[test]
@@ -360,14 +363,36 @@ mod tests {
 
     #[test]
     fn parse_literal_expression() {
-        let tokens: Vec<Token> = tokenize_code("1337;", None);
+        let tokens: Vec<Token> = tokenize_code("1337", None);
         let mut cursor: usize = 0;
         let expression = literal_expression(&tokens, &mut cursor).unwrap();
-        assert_eq!(expression, Expression {
-            typ: ExpressionType::Literal(Some(DataType::Integer)),
-            value: Some("1337".to_string()),
-            expressions: None,
-        })
+        assert_eq!(
+            expression,
+            Expression {
+                typ: ExpressionType::Literal(Some(DataType::Integer)),
+                value: Some("1337".to_string()),
+                expressions: None,
+            }
+        )
+    }
+
+    #[test]
+    fn parse_enclosure_expression() {
+        let tokens: Vec<Token> = tokenize_code("(false)", None);
+        let mut cursor: usize = 0;
+        let expression = enclosure_expression(&tokens, &mut cursor).unwrap();
+        assert_eq!(
+            expression,
+            Expression {
+                typ: ExpressionType::Enclosure,
+                value: None,
+                expressions: Some(vec![Expression {
+                    typ: ExpressionType::Literal(Some(DataType::Boolean)),
+                    value: Some("false".to_string()),
+                    expressions: None,
+                }]),
+            }
+        )
     }
 
     fn first_expression_type(program: &Program, expected: ExpressionType) {
