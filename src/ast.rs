@@ -141,17 +141,17 @@ fn parse_expression(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Expressio
         return Ok(enclosure_expression(tokens, cursor)?);
     }
 
-    // Literal expression is followed by Delimiter
     let lookahead_type: &TokenType = &peek_cursor(*cursor + 1, tokens)?.typ;
-    if matches!(lookahead_type, TokenType::Delimiter { .. }) {
-        return Ok(literal_expression(tokens, cursor)?);
-    }
-
     // Function call
     if &peek_cursor(*cursor, tokens)?.typ == &TokenType::Identifier
         && lookahead_type == &TokenType::Delimiter(Delimiter::OpenParen)
     {
         return Ok(function_call_expression(tokens, cursor)?);
+    }
+
+    // Literal expression is followed by Delimiter
+    if matches!(lookahead_type, TokenType::Delimiter { .. }) {
+        return Ok(literal_expression(tokens, cursor)?);
     }
 
     // TODO: Parse other expressions
@@ -492,7 +492,6 @@ mod tests {
         let tokens: Vec<Token> = tokenize_code("34+35;", None);
         let mut cursor: usize = 0;
         let expression = binary_expression(&tokens, &mut cursor).unwrap();
-        dbg!(&expression);
         assert_eq!(
             expression,
             Expression {
