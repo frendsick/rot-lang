@@ -2,14 +2,14 @@ use crate::data_types::DataType;
 
 use super::token::BinaryOperator;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Expression {
     pub typ: ExpressionType,
     pub value: Option<String>,
-    pub expressions: Option<Vec<Expression>>,
+    pub expressions: Vec<Expression>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum ExpressionType {
     Binary(BinaryOperator),
     Enclosure,

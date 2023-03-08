@@ -86,7 +86,7 @@ fn compound_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Stateme
 
 fn return_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Statement, CompilerError> {
     advance_cursor(cursor, tokens, &TokenType::Keyword(Keyword::Return))?;
-    let expression = parse_expression(tokens, cursor)?;
+    let expression = parse_combined_expression(tokens, cursor)?;
     advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::SemiColon))?;
     Ok(Statement {
         typ: StatementType::Return,
@@ -110,7 +110,7 @@ fn assignment_statement(
         tokens,
         &TokenType::BinaryOperator(BinaryOperator::Assignment),
     )?;
-    let expression = parse_expression(tokens, cursor)?;
+    let expression = parse_combined_expression(tokens, cursor)?;
     advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::SemiColon))?;
     Ok(Statement {
         typ: StatementType::Assignment(data_type),
@@ -136,6 +136,34 @@ fn block_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Statement,
     })
 }
 
+fn parse_combined_expression(
+    tokens: &Vec<Token>,
+    cursor: &mut usize,
+) -> Result<Expression, CompilerError> {
+    let mut expressions: Vec<Expression> = vec![parse_expression(tokens, cursor)?];
+    let mut typ: ExpressionType = expressions[0].typ.clone();
+
+    // Binary expressions
+    if matches!(
+        peek_cursor(*cursor, tokens)?.typ,
+        TokenType::BinaryOperator { .. }
+    ) {
+        let operator: Option<BinaryOperator> = TokenType::into(peek_cursor(*cursor, tokens)?.typ);
+        typ = ExpressionType::Binary(operator.unwrap());
+        *cursor += 1;
+        expressions.push(parse_combined_expression(tokens, cursor)?);
+    }
+
+    if expressions.len() == 1 {
+        return Ok(expressions[0].clone());
+    }
+    Ok(Expression {
+        typ,
+        value: None,
+        expressions,
+    })
+}
+
 fn parse_expression(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Expression, CompilerError> {
     if &peek_cursor(*cursor, tokens)?.typ == &TokenType::Delimiter(Delimiter::OpenParen) {
         return Ok(enclosure_expression(tokens, cursor)?);
@@ -148,17 +176,7 @@ fn parse_expression(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Expressio
     {
         return Ok(function_call_expression(tokens, cursor)?);
     }
-
-    // Literal expression is followed by Delimiter
-    if matches!(lookahead_type, TokenType::Delimiter { .. }) {
-        return Ok(literal_expression(tokens, cursor)?);
-    }
-
-    // TODO: Parse other expressions
-    todo!(
-        "Parse all expression types. Current token: {:?}",
-        tokens[*cursor]
-    )
+    Ok(literal_expression(tokens, cursor)?)
 }
 
 fn function_call_expression(
@@ -169,7 +187,7 @@ fn function_call_expression(
     advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::OpenParen))?;
     let mut expressions: Vec<Expression> = Vec::new();
     while peek_cursor(*cursor, tokens)?.typ != TokenType::Delimiter(Delimiter::CloseParen) {
-        expressions.push(parse_expression(tokens, cursor)?);
+        expressions.push(parse_combined_expression(tokens, cursor)?);
         if peek_cursor(*cursor, tokens)?.typ == TokenType::Delimiter(Delimiter::Comma) {
             *cursor += 1;
         } else if peek_cursor(*cursor, tokens)?.typ != TokenType::Delimiter(Delimiter::CloseParen) {
@@ -183,7 +201,7 @@ fn function_call_expression(
     Ok(Expression {
         typ: ExpressionType::FunctionCall,
         value: Some(function_name),
-        expressions: Some(expressions),
+        expressions,
     })
 }
 
@@ -192,12 +210,12 @@ fn enclosure_expression(
     cursor: &mut usize,
 ) -> Result<Expression, CompilerError> {
     advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::OpenParen))?;
-    let expression = parse_expression(tokens, cursor)?;
+    let expression = parse_combined_expression(tokens, cursor)?;
     advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::CloseParen))?;
     return Ok(Expression {
         typ: ExpressionType::Enclosure,
         value: None,
-        expressions: Some(vec![expression]),
+        expressions: vec![expression],
     });
 }
 
@@ -205,11 +223,11 @@ fn binary_expression(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Expressi
     let mut expressions: Vec<Expression> = vec![literal_expression(tokens, cursor)?];
     let binary_option: Option<BinaryOperator> = TokenType::into(peek_cursor(*cursor, tokens)?.typ);
     *cursor += 1; // Go past BinaryOperator
-    expressions.push(parse_expression(tokens, cursor)?);
+    expressions.push(parse_combined_expression(tokens, cursor)?);
     return Ok(Expression {
         typ: ExpressionType::Binary(binary_option.unwrap()),
         value: None,
-        expressions: Some(expressions),
+        expressions: expressions,
     });
 }
 
@@ -223,12 +241,12 @@ fn literal_expression(
         TokenType::Literal(data_type) => Ok(Expression {
             typ: ExpressionType::Literal(Some(data_type.clone())),
             value: Some(tokens[index].value.clone()),
-            expressions: None,
+            expressions: Vec::new(),
         }),
         TokenType::Identifier => Ok(Expression {
             typ: ExpressionType::Literal(None),
             value: Some(tokens[index].value.clone()),
-            expressions: None,
+            expressions: Vec::new(),
         }),
         _ => panic!("Unknown literal token '{}'", tokens[*cursor].value),
     }
@@ -248,7 +266,7 @@ fn expression_statement(
     tokens: &Vec<Token>,
     cursor: &mut usize,
 ) -> Result<Statement, CompilerError> {
-    let expression: Expression = parse_expression(tokens, cursor)?;
+    let expression: Expression = parse_combined_expression(tokens, cursor)?;
     advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::SemiColon))?;
     Ok(Statement {
         typ: StatementType::Expression,
@@ -463,7 +481,7 @@ mod tests {
             Expression {
                 typ: ExpressionType::Enclosure,
                 value: None,
-                expressions: Some(vec![mock_literal_expression("false", Some(DataType::Boolean))]),
+                expressions: vec![mock_literal_expression("false", Some(DataType::Boolean))],
             }
         )
     }
@@ -479,10 +497,10 @@ mod tests {
             Expression {
                 typ: ExpressionType::FunctionCall,
                 value: Some(function_name.to_string()),
-                expressions: Some(vec![
+                expressions: vec![
                     mock_literal_expression("a", None),
                     mock_literal_expression("b", None),
-                ]),
+                ],
             }
         )
     }
@@ -497,10 +515,10 @@ mod tests {
             Expression {
                 typ: ExpressionType::Binary(BinaryOperator::Addition),
                 value: None,
-                expressions: Some(vec![
+                expressions: vec![
                     mock_literal_expression("34", Some(DataType::Integer)),
                     mock_literal_expression("35", Some(DataType::Integer)),
-                ]),
+                ],
             }
         )
     }
@@ -509,7 +527,7 @@ mod tests {
         Expression {
             typ: ExpressionType::Literal(data_type),
             value: Some(value.to_string()),
-            expressions: None,
+            expressions: Vec::new(),
         }
     }
 
@@ -531,6 +549,5 @@ mod tests {
             .unwrap()
             .expressions
             .as_ref()
-            .unwrap()
     }
 }
