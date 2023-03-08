@@ -1,6 +1,4 @@
-use crate::data_types::DataType;
-
-use super::expression::Expression;
+use super::{expression::Expression, token::Token};
 
 #[derive(Debug, PartialEq)]
 pub struct Statement {
@@ -12,13 +10,13 @@ pub struct Statement {
 
 #[derive(Debug, PartialEq)]
 pub enum StatementType {
+    Assignment(Token),
     Compound,
     Conditional(Conditional),
     Expression,
     Loop,
     NoOperation,
     Return,
-    Variable(DataType),
 }
 
 #[derive(Debug, PartialEq)]

@@ -47,6 +47,7 @@ fn parse_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Statement,
         TokenType::Delimiter(Delimiter::SemiColon) => no_operation_statement(tokens, cursor),
         TokenType::Delimiter(Delimiter::OpenCurly) => compound_statement(tokens, cursor),
         TokenType::Keyword(Keyword::Return) => return_statement(tokens, cursor),
+        TokenType::Keyword(Keyword::Let) => assignment_statement(tokens, cursor),
         TokenType::Keyword(Keyword::If) => block_statement(tokens, cursor),
         TokenType::Keyword(Keyword::Elif) => block_statement(tokens, cursor),
         TokenType::Keyword(Keyword::Else) => block_statement(tokens, cursor),
@@ -89,6 +90,27 @@ fn return_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Statement
     advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::SemiColon))?;
     Ok(Statement {
         typ: StatementType::Return,
+        value: None,
+        expression: Some(expression),
+        statements: None,
+    })
+}
+
+fn assignment_statement(
+    tokens: &Vec<Token>,
+    cursor: &mut usize,
+) -> Result<Statement, CompilerError> {
+    advance_cursor(cursor, tokens, &TokenType::Keyword(Keyword::Let))?;
+    let token = advance_cursor(cursor, tokens, &TokenType::Identifier)?;
+    advance_cursor(
+        cursor,
+        tokens,
+        &TokenType::BinaryOperator(BinaryOperator::Assignment),
+    )?;
+    let expression = parse_expression(tokens, cursor)?;
+    advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::SemiColon))?;
+    Ok(Statement {
+        typ: StatementType::Assignment(token),
         value: None,
         expression: Some(expression),
         statements: None,
@@ -347,7 +369,7 @@ mod tests {
     fn parse_expression_statement() {
         let tokens: Vec<Token> = tokenize_code("1337;", None);
         let mut cursor: usize = 0;
-        let statement = expression_statement(&tokens, &mut cursor).expect("Could not generate AST");
+        let statement = expression_statement(&tokens, &mut cursor).unwrap();
         assert_eq!(statement.typ, StatementType::Expression);
         assert_inner_expression_type(&statement, ExpressionType::Literal(Some(DataType::Integer)));
     }
@@ -360,6 +382,26 @@ mod tests {
         // Expression statement is one statement
         assert_eq!(statement.typ, StatementType::Return);
         assert_inner_expression_type(&statement, ExpressionType::Literal(Some(DataType::Integer)));
+    }
+
+    #[test]
+    fn parse_assignment_statement() {
+        let tokens: Vec<Token> = tokenize_code("let nice = 69;", None);
+        let mut cursor: usize = 0;
+        let statement = assignment_statement(&tokens, &mut cursor).unwrap();
+        assert_eq!(
+            statement,
+            Statement {
+                typ: StatementType::Assignment(Token {
+                    value: "nice".to_string(),
+                    typ: TokenType::Identifier,
+                    location: tokens[1].location.clone(),
+                }),
+                value: None,
+                expression: Some(mock_literal_expression("69", DataType::Integer)),
+                statements: None,
+            }
+        );
     }
 
     #[test]

@@ -5,7 +5,7 @@ use crate::data_types::DataType;
 
 use super::location::Location;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Token {
     pub value: String,
     pub typ: TokenType,
@@ -70,6 +70,7 @@ pub enum Keyword {
     Endif,
     Fun,
     If,
+    Let,
     Return,
     While,
 }
@@ -96,6 +97,7 @@ pub const TOKEN_REGEXES: phf::OrderedMap<&str, TokenType> = phf_ordered_map!(
     r"^endif"           => TokenType::Keyword(Keyword::Endif),
     r"^fun"             => TokenType::Keyword(Keyword::Fun),
     r"^if"              => TokenType::Keyword(Keyword::If),
+    r"^let"             => TokenType::Keyword(Keyword::Let),
     r"^return"          => TokenType::Keyword(Keyword::Return),
     r"^while"           => TokenType::Keyword(Keyword::While),
 
