@@ -1,16 +1,9 @@
 break
-cast
-const
 continue
-do
-done
 elif
 else
 endif
-enum
 fun
 if
-include
-memory
 return
 while
