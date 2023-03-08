@@ -15,5 +15,4 @@ pub enum ExpressionType {
     Enclosure,
     FunctionCall,
     Literal(Option<DataType>),
-    Unary,
 }
