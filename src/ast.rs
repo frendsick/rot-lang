@@ -219,18 +219,6 @@ fn enclosure_expression(
     });
 }
 
-fn binary_expression(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Expression, CompilerError> {
-    let mut expressions: Vec<Expression> = vec![literal_expression(tokens, cursor)?];
-    let binary_option: Option<BinaryOperator> = TokenType::into(peek_cursor(*cursor, tokens)?.typ);
-    *cursor += 1; // Go past BinaryOperator
-    expressions.push(parse_combined_expression(tokens, cursor)?);
-    return Ok(Expression {
-        typ: ExpressionType::Binary(binary_option.unwrap()),
-        value: None,
-        expressions: expressions,
-    });
-}
-
 fn literal_expression(
     tokens: &Vec<Token>,
     cursor: &mut usize,
@@ -509,7 +497,7 @@ mod tests {
     fn parse_binary_expression() {
         let tokens: Vec<Token> = tokenize_code("34+35;", None);
         let mut cursor: usize = 0;
-        let expression = binary_expression(&tokens, &mut cursor).unwrap();
+        let expression = parse_combined_expression(&tokens, &mut cursor).unwrap();
         assert_eq!(
             expression,
             Expression {
@@ -543,11 +531,6 @@ mod tests {
     }
 
     fn extract_inner_expressions(statement: &Statement) -> &Vec<Expression> {
-        statement
-            .expression
-            .as_ref()
-            .unwrap()
-            .expressions
-            .as_ref()
+        statement.expression.as_ref().unwrap().expressions.as_ref()
     }
 }
