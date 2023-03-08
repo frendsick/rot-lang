@@ -55,19 +55,12 @@ pub enum Delimiter {
 #[derive(Debug, Clone, PartialEq, EnumCount, EnumIter)]
 pub enum Keyword {
     Break,
-    Cast,
-    Const,
     Continue,
-    Do,
-    Done,
     Elif,
     Else,
     Endif,
-    Enum,
     Fun,
     If,
-    Include,
-    Memory,
     Return,
     While,
 }
@@ -88,19 +81,12 @@ pub const TOKEN_REGEXES: phf::OrderedMap<&str, TokenType> = phf_ordered_map!(
 
     // Keywords
     r"^break"           => TokenType::Keyword(Keyword::Break),
-    r"^cast"            => TokenType::Keyword(Keyword::Cast),
-    r"^const"           => TokenType::Keyword(Keyword::Const),
     r"^continue"        => TokenType::Keyword(Keyword::Continue),
-    r"^done"            => TokenType::Keyword(Keyword::Done),
-    r"^do"              => TokenType::Keyword(Keyword::Do),
     r"^elif"            => TokenType::Keyword(Keyword::Elif),
     r"^else"            => TokenType::Keyword(Keyword::Else),
     r"^endif"           => TokenType::Keyword(Keyword::Endif),
-    r"^enum"            => TokenType::Keyword(Keyword::Enum),
     r"^fun"             => TokenType::Keyword(Keyword::Fun),
     r"^if"              => TokenType::Keyword(Keyword::If),
-    r"^include"         => TokenType::Keyword(Keyword::Include),
-    r"^memory"          => TokenType::Keyword(Keyword::Memory),
     r"^return"          => TokenType::Keyword(Keyword::Return),
     r"^while"           => TokenType::Keyword(Keyword::While),
 
