@@ -363,16 +363,13 @@ mod tests {
 
     #[test]
     fn parse_literal_expression() {
-        let tokens: Vec<Token> = tokenize_code("1337", None);
+        let literal: &str = "1337";
+        let tokens: Vec<Token> = tokenize_code(literal, None);
         let mut cursor: usize = 0;
         let expression = literal_expression(&tokens, &mut cursor).unwrap();
         assert_eq!(
             expression,
-            Expression {
-                typ: ExpressionType::Literal(Some(DataType::Integer)),
-                value: Some("1337".to_string()),
-                expressions: None,
-            }
+            mock_literal_expression(literal, DataType::Integer)
         )
     }
 
@@ -386,13 +383,36 @@ mod tests {
             Expression {
                 typ: ExpressionType::Enclosure,
                 value: None,
-                expressions: Some(vec![Expression {
-                    typ: ExpressionType::Literal(Some(DataType::Boolean)),
-                    value: Some("false".to_string()),
-                    expressions: None,
-                }]),
+                expressions: Some(vec![mock_literal_expression("false", DataType::Boolean)]),
             }
         )
+    }
+
+    #[test]
+    fn parse_binary_expression() {
+        let tokens: Vec<Token> = tokenize_code("34+35;", None);
+        let mut cursor: usize = 0;
+        let expression = binary_expression(&tokens, &mut cursor).unwrap();
+        dbg!(&expression);
+        assert_eq!(
+            expression,
+            Expression {
+                typ: ExpressionType::Binary(BinaryOperator::Addition),
+                value: None,
+                expressions: Some(vec![
+                    mock_literal_expression("34", DataType::Integer),
+                    mock_literal_expression("35", DataType::Integer),
+                ]),
+            }
+        )
+    }
+
+    fn mock_literal_expression(value: &str, data_type: DataType) -> Expression {
+        Expression {
+            typ: ExpressionType::Literal(Some(data_type)),
+            value: Some(value.to_string()),
+            expressions: None,
+        }
     }
 
     fn first_expression_type(program: &Program, expected: ExpressionType) {
