@@ -88,8 +88,15 @@ fn function_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Stateme
 }
 
 fn return_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Statement, CompilerError> {
-    // return <expr>;
-    todo!()
+    advance_cursor(cursor, tokens, &TokenType::Keyword(Keyword::Return))?;
+    let expression = parse_expression(tokens, cursor)?;
+    advance_cursor(cursor, tokens, &TokenType::Delimiter(Delimiter::SemiColon))?;
+    Ok(Statement {
+        typ: StatementType::Return,
+        value: None,
+        expression: Some(expression),
+        statements: None,
+    })
 }
 
 fn block_statement(tokens: &Vec<Token>, cursor: &mut usize) -> Result<Statement, CompilerError> {
@@ -358,6 +365,16 @@ mod tests {
         // Expression statement is one statement
         assert_eq!(program.statements.len(), 1);
         assert_eq!(program.statements[0].typ, StatementType::Expression);
+        first_expression_type(&program, ExpressionType::Literal(Some(DataType::Integer)));
+    }
+
+    #[test]
+    fn parse_return_statement() {
+        let tokens: Vec<Token> = tokenize_code("return 42;", None);
+        let program: Program = generate_ast(&tokens).expect("Could not generate AST");
+        // Expression statement is one statement
+        assert_eq!(program.statements.len(), 1);
+        assert_eq!(program.statements[0].typ, StatementType::Return);
         first_expression_type(&program, ExpressionType::Literal(Some(DataType::Integer)));
     }
 
