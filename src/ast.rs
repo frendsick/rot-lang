@@ -358,6 +358,18 @@ mod tests {
         first_expression_type(&program, ExpressionType::Literal(Some(DataType::Integer)));
     }
 
+    #[test]
+    fn parse_literal_expression() {
+        let tokens: Vec<Token> = tokenize_code("1337;", None);
+        let mut cursor: usize = 0;
+        let expression = literal_expression(&tokens, &mut cursor).unwrap();
+        assert_eq!(expression, Expression {
+            typ: ExpressionType::Literal(Some(DataType::Integer)),
+            value: Some("1337".to_string()),
+            expressions: None,
+        })
+    }
+
     fn first_expression_type(program: &Program, expected: ExpressionType) {
         assert_eq!(
             program.statements[0].expression.as_ref().unwrap().typ,
